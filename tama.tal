@@ -1,0 +1,124 @@
+( Stats: https://www.tamatalk.com/threads/tama-behaviour-schedule-v5.181751/ )
+( Chr: http://make.vg/brewtool/chr/index.html )
+( Base64 to hex: https://cryptii.com/pipes/base64-to-hex )
+
+|00 @System  [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
+|10 @Console &vector $2 &read $1 &pad $4 &type $1 &write $1 &error $1
+|20 @Screen  [ &vector $2 &width $2 &height $2 &pad $2 &x $2 &y $2 &addr $2 &pixel $1 &sprite $1 ]
+|80 @Controller [ &vector $2 &button $1 &key $1 ]
+|c0 @DateTime &year $2 &month $1 &day $1 &hour $1 &minute $1 &second $1 &dotw $1 &doty $2 &isdst $1
+
+( MACROS )
+
+( sprite-setting sprite-addr x y -- sprite-setting )
+%DRAW_TILE {
+    .Screen/y DEO2
+    .Screen/x DEO2
+    .Screen/addr DEO2
+    .Screen/sprite DEOk 
+    POP
+}
+
+( Draw a 16*16px sprite )
+( sprite-setting sprite-addr x y -- )
+%DRAW_SPRITE {
+    DRAW_TILE
+    #0008 .Screen/x DEI2 ADD2 .Screen/x DEO2
+    #0008 .Screen/addr DEI2 ADD2 .Screen/addr DEO2
+    DUP .Screen/sprite DEO
+    #0010 .Screen/addr DEI2 ADD2 .Screen/addr DEO2
+    #0008 .Screen/y DEI2 ADD2 .Screen/y DEO2
+    DUP .Screen/sprite DEO
+    #0008 .Screen/x DEI2 SUB2 .Screen/x DEO2
+    .Screen/addr DEI2 #0008 SUB2 .Screen/addr DEO2
+    .Screen/sprite DEO
+}
+
+
+%TAMA_INIT {
+    ;egg/animation .Tama/frame STZ2
+    #0000 .Tama/x STZ2
+    #0000 .Tama/y STZ2
+}
+
+%TAMA_DRAW {
+    .Tama/frame LDZ2 #0003 ADD2 .Tama/frame STZ2k POP LDA
+    ,&skip-reset JCN
+    ;egg/animation .Tama/frame STZ2
+    &skip-reset
+    .Tama/frame LDZ2 DUP2 INC SWP2
+    LDA ROT ROT
+    LDA2
+    .Tama/x LDZ2
+    .Tama/y LDZ2
+    DRAW_SPRITE
+}
+
+
+( Structs )
+
+|0000
+    @frame-counter $1
+    @Tama 
+        &frame $2
+        &x $2
+        &y $2
+        &state $1
+        &happy $1
+        &hunger $1
+        &strain $1
+        &poop $1
+
+
+
+
+|0100
+    #13ef .System/r DEO2
+    #27af .System/g DEO2
+    #5b7c .System/b DEO2
+
+    TAMA_INIT
+
+
+    ;on-screen .Screen/vector DEO2
+BRK
+
+
+( Methods )
+@on-screen
+    .frame-counter LDZk INC SWP STZk POP
+    #0f AND
+    #0f EQU
+    ,&draw JCN
+    ,&end JMP
+    &draw 
+        TAMA_DRAW
+        
+    &end
+BRK
+
+
+( RES )
+@egg
+    &animation
+    01 =egg/frame-1 01 =egg/frame-2 01 =egg/frame-1 01 =egg/frame-3 00
+    &frame-1
+    00 00 03 04 04 08 08 10
+    00 00 c0 20 60 f0 70 08
+    13 17 0f 0f 07 00 00 00
+    08 88 90 10 e0 00 00 00
+    &frame-2
+    00 00 03 04 04 08 08 08
+    00 00 c0 20 60 f0 70 08
+    09 0b 07 07 03 00 00 00
+    84 c4 c8 88 f0 00 00 00
+    &frame-3
+    00 00 01 02 02 06 04 08
+    00 00 e0 30 70 f8 78 08
+    13 17 0f 0f 07 00 00 00
+    08 88 90 90 e0 00 00 00
+
+
+
+
+

@@ -21,6 +21,27 @@
     JMP2r
 }
 
+( sub with carry )
+( a b -- a-b c )
+%SUBC {
+    SWP DUP ROT SUB
+    SWP GTHk SWP POP
+}
+
+( sub2 with carry )
+( a b -- a-b c )
+%SUBC2 {
+    SWP2 DUP2 ROT2 SUB2
+    SWP2 GTHk2 SWP2 POP2
+}
+
+%TIME {
+    #00 .DateTime/minute DEI .epoch/min LDZ SUBC
+    #00 SWP .DateTime/hour DEI .epoch/hour LDZ ROT ADD SUBC
+    #00 SWP .DateTime/day DEI .epoch/day LDZ ROT ADD SUB
+    #05a0 MUL2 SWP2 #003c MUL2 ADD2 ADD2 
+}
+
 ( sprite-setting sprite-addr x y -- sprite-setting )
 %DRAW_TILE {
     .Screen/y DEO2
@@ -34,6 +55,12 @@
 
 |0000
     @frame-counter $1
+    ( dd hh mm, we only keep low nibble for year )
+    @epoch 
+        &day $1
+        &hour $1
+        &min $1
+    @Events $6
     @Tama 
         &frame $2
         &x $2
@@ -51,6 +78,8 @@
     #27af .System/g DEO2
     #5b7c .System/b DEO2
 
+    ( we want only low nibble for year )
+    ;load-game CALL
     ;tama-init CALL
 
     ;on-screen .Screen/vector DEO2
@@ -58,6 +87,19 @@ BRK
 
 
 ( Methods )
+
+( MISC )
+
+( load game save (stub for now) )
+@load-game 
+    ( we load when the game was first started to store a timestamp on 16 bit from then )
+    ( .DateTime/day DEI )
+    #0d .epoch/day STZ
+    ( .DateTime/hour DEI )
+    #0c .epoch/hour STZ
+    ( .DateTime/minute DEI )
+    #00 .epoch/min STZ
+RET
 
 ( SCREEN Methods )
 ( Run each frames )
@@ -84,7 +126,7 @@ BRK
     #02 .Screen/sprite DEO
     #0008 .Screen/x DEI2 SUB2 .Screen/x DEO2
     #02 .Screen/sprite DEO
-    RET
+RET
 
 ( Draw a 16x16 sprite on screen )
 ( sprite-setting sprite-addr x y -- )
@@ -99,24 +141,44 @@ BRK
     .Screen/x DEI2 #0008 SUB2 .Screen/x DEO2
     .Screen/addr DEI2 #0008 SUB2 .Screen/addr DEO2
     .Screen/sprite DEO
-    RET
+RET
 
 ( TAMA methods )
 ( init the tamagotchi )
 @tama-init 
     ;egg/animation .Tama/frame STZ2
-    #0000 .Tama/x STZ2
-    #0000 .Tama/y STZ2
-    RET
+    #0018 .Tama/x STZ2
+    #0018 .Tama/y STZ2
+    #00 .Tama/state STZ
+
+    TIME #0001 ADD2 .Events STZ2 
+    ;tama-update-when-egg .Events #02 ADD STZ2 
+RET
+
+( update tamagotchi state when egg )
+@tama-update-when-egg 
+ #02
+RET
+
+@tama-check-for-events
+( check for pending events )
+    .Events LDZ2
+    #0000 EQU2 ,&after-events JCN
+    .Events LDZ2
+    TIME GTH2 ,&after-events JCN
+    .Events #02 ADD LDZ2 CALL
+    #0000 .Events STZ2
+    &after-events
+RET
 
 ( update tamagotchi state )
 @tama-update 
+    ;tama-check-for-events CALL
     .Tama/x LDZ2 .Tama/y LDZ2
     ;sprite-clean CALL
-    SWP2  #0001 ADD2 .Tama/x STZ2k POP SWP2
     POP2 POP2
     ;tama-draw CALL
-    RET
+RET
 
 ( draw the tamagotchi and updates its animation )
 @tama-draw 
@@ -130,9 +192,10 @@ BRK
     .Tama/x LDZ2 
     .Tama/y LDZ2
     ;sprite-draw CALL
-    RET
+RET
 
 ( RES )
+
 @clean
     00 00 00 00 00 00 00 00
 

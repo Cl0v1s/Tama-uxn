@@ -29,11 +29,24 @@
     #0010 .Screen/addr DEI2 ADD2 .Screen/addr DEO2
     #0008 .Screen/y DEI2 ADD2 .Screen/y DEO2
     DUP .Screen/sprite DEO
-    #0008 .Screen/x DEI2 SUB2 .Screen/x DEO2
+    .Screen/x DEI2 #0008 SUB2 .Screen/x DEO2
     .Screen/addr DEI2 #0008 SUB2 .Screen/addr DEO2
     .Screen/sprite DEO
 }
 
+( clean the sprite at pos, keeps x and y in stack )
+( x y -- x y )
+%CLEAN_SPRITE {
+    .Screen/y DEO2k POP SWP2 .Screen/x DEO2k POP SWP2
+    ;clean .Screen/addr DEO2
+    #02 .Screen/sprite DEO
+    .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
+    #02 .Screen/sprite DEO
+    .Screen/y DEI2 #0008 ADD2 .Screen/y DEO2
+    #02 .Screen/sprite DEO
+    #0008 .Screen/x DEI2 SUB2 .Screen/x DEO2
+    #02 .Screen/sprite DEO
+}
 
 %TAMA_INIT {
     ;egg/animation .Tama/frame STZ2
@@ -49,11 +62,10 @@
     .Tama/frame LDZ2 DUP2 INC SWP2
     LDA ROT ROT
     LDA2
-    .Tama/x LDZ2
+    .Tama/x LDZ2 
     .Tama/y LDZ2
     DRAW_SPRITE
 }
-
 
 ( Structs )
 
@@ -73,12 +85,13 @@
 
 
 |0100
+    #0040 .Screen/width DEO2
+    #0040 .Screen/height DEO2
     #13ef .System/r DEO2
     #27af .System/g DEO2
     #5b7c .System/b DEO2
 
     TAMA_INIT
-
 
     ;on-screen .Screen/vector DEO2
 BRK
@@ -89,16 +102,22 @@ BRK
     .frame-counter LDZk INC SWP STZk POP
     #0f AND
     #0f EQU
-    ,&draw JCN
-    ,&end JMP
+    ;&draw JCN2
+    ;&end JMP2
     &draw 
+        .Tama/x LDZ2 .Tama/y LDZ2
+        CLEAN_SPRITE
+        SWP2  #0001 ADD2 .Tama/x STZ2k POP SWP2
+        POP2 POP2
         TAMA_DRAW
-        
     &end
 BRK
 
 
 ( RES )
+@clean
+    00 00 00 00 00 00 00 00
+
 @egg
     &animation
     01 =egg/frame-1 01 =egg/frame-2 01 =egg/frame-1 01 =egg/frame-3 00

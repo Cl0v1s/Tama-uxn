@@ -10,6 +10,17 @@
 
 ( MACROS )
 
+( sub-routine-address -- )
+%CALL {
+    JSR2
+}
+
+( -- )
+( return-address -- (rst) )
+%RET {
+    JMP2r
+}
+
 ( sprite-setting sprite-addr x y -- sprite-setting )
 %DRAW_TILE {
     .Screen/y DEO2
@@ -17,54 +28,6 @@
     .Screen/addr DEO2
     .Screen/sprite DEOk 
     POP
-}
-
-( Draw a 16*16px sprite )
-( sprite-setting sprite-addr x y -- )
-%DRAW_SPRITE {
-    DRAW_TILE
-    #0008 .Screen/x DEI2 ADD2 .Screen/x DEO2
-    #0008 .Screen/addr DEI2 ADD2 .Screen/addr DEO2
-    DUP .Screen/sprite DEO
-    #0010 .Screen/addr DEI2 ADD2 .Screen/addr DEO2
-    #0008 .Screen/y DEI2 ADD2 .Screen/y DEO2
-    DUP .Screen/sprite DEO
-    .Screen/x DEI2 #0008 SUB2 .Screen/x DEO2
-    .Screen/addr DEI2 #0008 SUB2 .Screen/addr DEO2
-    .Screen/sprite DEO
-}
-
-( clean the sprite at pos, keeps x and y in stack )
-( x y -- x y )
-%CLEAN_SPRITE {
-    .Screen/y DEO2k POP SWP2 .Screen/x DEO2k POP SWP2
-    ;clean .Screen/addr DEO2
-    #02 .Screen/sprite DEO
-    .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
-    #02 .Screen/sprite DEO
-    .Screen/y DEI2 #0008 ADD2 .Screen/y DEO2
-    #02 .Screen/sprite DEO
-    #0008 .Screen/x DEI2 SUB2 .Screen/x DEO2
-    #02 .Screen/sprite DEO
-}
-
-%TAMA_INIT {
-    ;egg/animation .Tama/frame STZ2
-    #0000 .Tama/x STZ2
-    #0000 .Tama/y STZ2
-}
-
-%TAMA_DRAW {
-    .Tama/frame LDZ2 #0003 ADD2 .Tama/frame STZ2k POP LDA
-    ,&skip-reset JCN
-    ;egg/animation .Tama/frame STZ2
-    &skip-reset
-    .Tama/frame LDZ2 DUP2 INC SWP2
-    LDA ROT ROT
-    LDA2
-    .Tama/x LDZ2 
-    .Tama/y LDZ2
-    DRAW_SPRITE
 }
 
 ( Structs )
@@ -81,9 +44,6 @@
         &strain $1
         &poop $1
 
-
-
-
 |0100
     #0040 .Screen/width DEO2
     #0040 .Screen/height DEO2
@@ -91,28 +51,86 @@
     #27af .System/g DEO2
     #5b7c .System/b DEO2
 
-    TAMA_INIT
+    ;tama-init CALL
 
     ;on-screen .Screen/vector DEO2
 BRK
 
 
 ( Methods )
+
+( SCREEN Methods )
+( Run each frames )
 @on-screen
     .frame-counter LDZk INC SWP STZk POP
     #0f AND
     #0f EQU
-    ;&draw JCN2
-    ;&end JMP2
+    ,&draw JCN
+    ,&end JMP
     &draw 
-        .Tama/x LDZ2 .Tama/y LDZ2
-        CLEAN_SPRITE
-        SWP2  #0001 ADD2 .Tama/x STZ2k POP SWP2
-        POP2 POP2
-        TAMA_DRAW
+        ;tama-update CALL
     &end
 BRK
 
+( Clean & 16x16 sprite on screen )
+( x y -- x y )
+@sprite-clean 
+    .Screen/y DEO2k POP SWP2 .Screen/x DEO2k POP SWP2
+    ;clean .Screen/addr DEO2
+    #02 .Screen/sprite DEO
+    .Screen/x DEI2 #0008 ADD2 .Screen/x DEO2
+    #02 .Screen/sprite DEO
+    .Screen/y DEI2 #0008 ADD2 .Screen/y DEO2
+    #02 .Screen/sprite DEO
+    #0008 .Screen/x DEI2 SUB2 .Screen/x DEO2
+    #02 .Screen/sprite DEO
+    RET
+
+( Draw a 16x16 sprite on screen )
+( sprite-setting sprite-addr x y -- )
+@sprite-draw 
+    DRAW_TILE
+    #0008 .Screen/x DEI2 ADD2 .Screen/x DEO2
+    #0008 .Screen/addr DEI2 ADD2 .Screen/addr DEO2
+    DUP .Screen/sprite DEO
+    #0010 .Screen/addr DEI2 ADD2 .Screen/addr DEO2
+    #0008 .Screen/y DEI2 ADD2 .Screen/y DEO2
+    DUP .Screen/sprite DEO
+    .Screen/x DEI2 #0008 SUB2 .Screen/x DEO2
+    .Screen/addr DEI2 #0008 SUB2 .Screen/addr DEO2
+    .Screen/sprite DEO
+    RET
+
+( TAMA methods )
+( init the tamagotchi )
+@tama-init 
+    ;egg/animation .Tama/frame STZ2
+    #0000 .Tama/x STZ2
+    #0000 .Tama/y STZ2
+    RET
+
+( update tamagotchi state )
+@tama-update 
+    .Tama/x LDZ2 .Tama/y LDZ2
+    ;sprite-clean CALL
+    SWP2  #0001 ADD2 .Tama/x STZ2k POP SWP2
+    POP2 POP2
+    ;tama-draw CALL
+    RET
+
+( draw the tamagotchi and updates its animation )
+@tama-draw 
+    .Tama/frame LDZ2 #0003 ADD2 .Tama/frame STZ2k POP LDA
+    ,&skip-reset JCN
+    ;egg/animation .Tama/frame STZ2
+    &skip-reset
+    .Tama/frame LDZ2 DUP2 INC SWP2
+    LDA ROT ROT
+    LDA2
+    .Tama/x LDZ2 
+    .Tama/y LDZ2
+    ;sprite-draw CALL
+    RET
 
 ( RES )
 @clean

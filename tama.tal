@@ -55,6 +55,7 @@
 
 |0000
     @frame-counter $1
+    @cursor $2
     ( dd hh mm, we only keep low nibble for year )
     @epoch 
         &day $1
@@ -81,6 +82,7 @@
     ( we want only low nibble for year )
     ;load-game CALL
     ;tama-init CALL
+    ;ui-init CALL
 
     ;on-screen .Screen/vector DEO2
 BRK
@@ -111,6 +113,7 @@ RET
     ,&end JMP
     &draw 
         ;tama-update CALL
+        ;ui-update CALL
     &end
 BRK
 
@@ -143,6 +146,36 @@ RET
     .Screen/sprite DEO
 RET
 
+( UI methods )
+%UI-Y { #0036 }
+
+@ui-slots 
+    &food 001c 
+    &end 0000
+
+( init the UI )
+@ui-init 
+    ;ui-slots LDA2 .cursor STZ2
+    #01 ;food ;ui-slots/food LDA2 UI-Y DRAW_TILE POP
+RET 
+
+@ui-update 
+    #01 ;ui-draw CALL
+RET 
+
+( draw blinking cursor )
+( pixel-settings -- )
+@ui-draw 
+    UI-Y #0008 ADD2 .Screen/y DEO2
+    .cursor LDZ2 #0003 ADD2 DUP2 .Screen/x DEO2
+    ROT DUP
+    .Screen/pixel DEO
+    ROT ROT
+    INC .Screen/x DEO2
+    .Screen/pixel DEO
+RET 
+
+
 ( TAMA methods )
 ( init the tamagotchi )
 @tama-init 
@@ -152,12 +185,12 @@ RET
     #00 .Tama/state STZ
 
     TIME #0001 ADD2 .Events STZ2 
-    ;tama-update-when-egg .Events #02 ADD STZ2 
+    ;tama-hatch-egg .Events #02 ADD STZ2 
 RET
 
-( update tamagotchi state when egg )
-@tama-update-when-egg 
- #02
+( hatch egg )
+@tama-hatch-egg
+    #31 .Console/write DEO
 RET
 
 @tama-check-for-events
@@ -171,9 +204,16 @@ RET
     &after-events
 RET
 
+( update tamagotchi state when egg )
+@tama-update-when-egg 
+
+
+
 ( update tamagotchi state )
 @tama-update 
     ;tama-check-for-events CALL
+
+    &after-state
     .Tama/x LDZ2 .Tama/y LDZ2
     ;sprite-clean CALL
     POP2 POP2
@@ -198,6 +238,9 @@ RET
 
 @clean
     00 00 00 00 00 00 00 00
+
+@food 
+    00 28 14 7e 42 3c 00 00
 
 @egg
     &animation

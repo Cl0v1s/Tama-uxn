@@ -55,6 +55,7 @@
 
 |0000
     @frame-counter $1
+    ( contains the adress of the currently selected UI slot )
     @cursor $2
     ( dd hh mm, we only keep low nibble for year )
     @epoch 
@@ -85,6 +86,7 @@
     ;ui-init CALL
 
     ;on-screen .Screen/vector DEO2
+    ;on-controller .Controller/vector DEO2
 BRK
 
 
@@ -102,6 +104,25 @@ BRK
     ( .DateTime/minute DEI )
     #00 .epoch/min STZ
 RET
+
+( CONTROLLER Methods )
+@on-controller 
+    ( -- b )
+    .Controller/button DEI
+    DUP #40 AND ?on-controller-left
+    DUP #80 AND ?on-controller-right
+    POP
+BRK
+
+@on-controller-left
+    POP
+    #00 ;ui-move CALL
+BRK 
+
+@on-controller-right 
+    POP
+    #01 ;ui-move CALL
+BRK
 
 ( SCREEN Methods )
 ( Run each frames )
@@ -149,25 +170,56 @@ RET
 ( UI methods )
 %UI-Y { #0036 }
 
+( available UI Menu slots )
 @ui-slots 
-    &food 001c 
-    &end 0000
+    &food &end 001c 
 
 ( init the UI )
 @ui-init 
-    ;ui-slots LDA2 .cursor STZ2
-    #01 ;food ;ui-slots/food LDA2 UI-Y DRAW_TILE POP
+    ;ui-slots/food .cursor STZ2
+    #03 ;food ;ui-slots/food LDA2 UI-Y DRAW_TILE POP
 RET 
 
 @ui-update 
-    #01 ;ui-draw CALL
+    .frame-counter LDZ
+    #3f AND #3f EQU ,&draw JCN
+        #03 
+        ,&end JMP
+    &draw
+        #00
+    &end
+    ;ui-draw CALL
 RET 
+
+( move ui cursor, 0 -> move left 1 -> move right )
+( dir -- )
+@ui-move 
+    ( clean last pos )
+    #00 ;ui-draw CALL
+    .cursor LDZ2
+    ( move according dir in stack )
+    ROT 
+    #00 GTH ,&right JCN
+    #0002 SUB2
+    ,&end JMP
+    &right
+    #0002 ADD2
+    &end 
+    ( boundaries )
+    DUP2 ;ui-slots/end LTH2 ,&check-left JCN
+    POP2 ;ui-slots/end
+    &check-left
+    DUP2 ;ui-slots GTH2 ,&after-check JCN
+    POP2 ;ui-slots
+    &after-check
+    .cursor STZ2
+RET
 
 ( draw blinking cursor )
 ( pixel-settings -- )
 @ui-draw 
     UI-Y #0008 ADD2 .Screen/y DEO2
-    .cursor LDZ2 #0003 ADD2 DUP2 .Screen/x DEO2
+    .cursor LDZ2 LDA2 #0003 ADD2 DUP2 .Screen/x DEO2
     ROT DUP
     .Screen/pixel DEO
     ROT ROT
@@ -206,8 +258,6 @@ RET
 
 ( update tamagotchi state when egg )
 @tama-update-when-egg 
-
-
 
 ( update tamagotchi state )
 @tama-update 

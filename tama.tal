@@ -57,6 +57,8 @@
     @frame-counter $1
     ( contains the adress of the currently selected UI slot )
     @cursor $2
+    ( contains address of the currently played scene )
+    @scene $2
     ( dd hh mm, we only keep low nibble for year )
     @epoch 
         &day $1
@@ -80,7 +82,6 @@
     #27af .System/g DEO2
     #5b7c .System/b DEO2
 
-    ( we want only low nibble for year )
     ;load-game CALL
     ;tama-init CALL
     ;ui-init CALL
@@ -103,6 +104,8 @@ BRK
     #0c .epoch/hour STZ
     ( .DateTime/minute DEI )
     #00 .epoch/min STZ
+    ( we set main scene as first scene )
+    ;main-scene .scene STZ2 
 RET
 
 ( CONTROLLER Methods )
@@ -111,7 +114,13 @@ RET
     .Controller/button DEI
     DUP #40 AND ?on-controller-left
     DUP #80 AND ?on-controller-right
+    DUP #01 AND ?on-controller-a
     POP
+BRK
+
+@on-controller-a 
+    POP
+    ;ui-select CALL
 BRK
 
 @on-controller-left
@@ -130,11 +139,10 @@ BRK
     .frame-counter LDZk INC SWP STZk POP
     #0f AND
     #0f EQU
-    ,&draw JCN
+    ,&update JCN
     ,&end JMP
-    &draw 
-        ;tama-update CALL
-        ;ui-update CALL
+    &update 
+        .scene LDZ2 CALL
     &end
 BRK
 
@@ -167,17 +175,27 @@ RET
     .Screen/sprite DEO
 RET
 
+( SCENE methods )
+@main-scene 
+      ;tama-update CALL
+        ;ui-update CALL
+RET
+
 ( UI methods )
 %UI-Y { #0036 }
 
 ( available UI Menu slots )
 @ui-slots 
-    &food &end 001c 
+    &food 000f =tama-feed
+    &sleep 001c =tama-sleep
+    &wash &end 0028 =tama-wash
 
 ( init the UI )
 @ui-init 
     ;ui-slots/food .cursor STZ2
     #03 ;food ;ui-slots/food LDA2 UI-Y DRAW_TILE POP
+    #03 ;sleep ;ui-slots/sleep LDA2 UI-Y DRAW_TILE POP
+    #03 ;wash ;ui-slots/wash LDA2 UI-Y DRAW_TILE POP
 RET 
 
 @ui-update 
@@ -200,10 +218,10 @@ RET
     ( move according dir in stack )
     ROT 
     #00 GTH ,&right JCN
-    #0002 SUB2
+    #0004 SUB2
     ,&end JMP
     &right
-    #0002 ADD2
+    #0004 ADD2
     &end 
     ( boundaries )
     DUP2 ;ui-slots/end LTH2 ,&check-left JCN
@@ -213,6 +231,14 @@ RET
     POP2 ;ui-slots
     &after-check
     .cursor STZ2
+RET
+
+( activate currently selected option )
+@ui-select 
+    .cursor LDZ2
+    #0002 ADD2
+    LDA2
+    CALL
 RET
 
 ( draw blinking cursor )
@@ -270,6 +296,21 @@ RET
     ;tama-draw CALL
 RET
 
+( make tama eat )
+@tama-feed 
+    #32 .Console/write DEO
+RET 
+
+( make tama sleep )
+@tama-sleep
+    #33 .Console/write DEO
+RET
+
+( make tama clean )
+@tama-wash 
+    #34 .Console/write DEO
+RET 
+
 ( draw the tamagotchi and updates its animation )
 @tama-draw 
     .Tama/frame LDZ2 #0003 ADD2 .Tama/frame STZ2k POP LDA
@@ -291,6 +332,12 @@ RET
 
 @food 
     00 28 14 7e 42 3c 00 00
+
+@wash
+    00 02 04 18 28 58 70 00
+
+@sleep
+    00 06 02 64 26 40 60 00
 
 @egg
     &animation

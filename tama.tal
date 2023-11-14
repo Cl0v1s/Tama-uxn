@@ -1,6 +1,7 @@
 ( Stats: https://www.tamatalk.com/threads/tama-behaviour-schedule-v5.181751/ )
 ( Chr: http://make.vg/brewtool/chr/index.html )
 ( Base64 to hex: https://cryptii.com/pipes/base64-to-hex )
+( ressource pack: https://piiixl.itch.io/1-bit-in-motion )
 
 |00 @System  [ &vector $2 &pad $6 &r $2 &g $2 &b $2 ]
 |10 @Console &vector $2 &read $1 &pad $4 &type $1 &write $1 &error $1
@@ -177,8 +178,8 @@ RET
 
 ( SCENE methods )
 @main-scene 
-      ;tama-update CALL
-        ;ui-update CALL
+    ;tama-update CALL
+    ;ui-update CALL
 RET
 
 ( UI methods )
@@ -257,7 +258,7 @@ RET
 ( TAMA methods )
 ( init the tamagotchi )
 @tama-init 
-    ;egg/animation .Tama/frame STZ2
+    ;pig-bounce/animation .Tama/frame STZ2
     #0018 .Tama/x STZ2
     #0018 .Tama/y STZ2
     #00 .Tama/state STZ
@@ -315,7 +316,7 @@ RET
 @tama-draw 
     .Tama/frame LDZ2 #0003 ADD2 .Tama/frame STZ2k POP LDA
     ,&skip-reset JCN
-    ;egg/animation .Tama/frame STZ2
+    ;pig-bounce/animation .Tama/frame STZ2
     &skip-reset
     .Tama/frame LDZ2 DUP2 INC SWP2
     LDA ROT ROT
@@ -338,6 +339,20 @@ RET
 
 @sleep
     00 06 02 64 26 40 60 00
+
+@pig-bounce
+    &animation 
+    01 =pig-bounce/frame-1 01 =pig-bounce/frame-1 01 =pig-bounce/frame-2 00
+    &frame-1
+    00 03 04 1d 20 40 40 40 
+    00 60 90 b0 08 a8 04 7c
+    40 40 40 80 40 37 3f 00
+    82 aa 82 7c 04 68 f8 00
+    &frame-2
+    00 00 03 04 1d 20 40 40
+    00 00 60 90 b0 08 a8 04
+    40 40 40 40 80 40 7f 00
+    7c 82 aa 82 7c 04 fc 00
 
 @egg
     &animation

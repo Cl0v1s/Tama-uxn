@@ -62,7 +62,11 @@
     ( contains the adress of the currently selected UI slot )
     @cursor $2
     ( contains address of the currently played scene )
-    @scene $2
+    @scene 
+        &update $2
+        &input-a $2
+        &input-left $2
+        &input-right $2
     ( dd hh mm, we only keep low nibble for year )
     @epoch 
         &day $1
@@ -87,8 +91,6 @@
     #5b7c .System/b DEO2
 
     ;load-game CALL
-    ;tama-init CALL
-    ;ui-init CALL
 
     ;on-screen .Screen/vector DEO2
     ;on-controller .Controller/vector DEO2
@@ -109,7 +111,9 @@ BRK
     ( .DateTime/minute DEI )
     #00 .epoch/min STZ
     ( we set main scene as first scene )
-    ;main-scene .scene STZ2 
+    ;main-scene .scene/update STZ2 
+
+    ;main-scene-init CALL
 RET
 
 ( CONTROLLER Methods )
@@ -124,17 +128,17 @@ BRK
 
 @on-controller-a 
     POP
-    ;ui-select CALL
+    .scene/input-a LDZ2 CALL
 BRK
 
 @on-controller-left
     POP
-    #00 ;ui-move CALL
+    .scene/input-left LDZ2 CALL
 BRK 
 
 @on-controller-right 
     POP
-    #01 ;ui-move CALL
+    .scene/input-right LDZ2 CALL
 BRK
 
 ( SCREEN Methods )
@@ -146,7 +150,7 @@ BRK
     ,&update JCN
     ,&end JMP
     &update 
-        .scene LDZ2 CALL
+        .scene/update LDZ2 CALL
     &end
 BRK
 
@@ -180,29 +184,41 @@ RET
 RET
 
 ( SCENE methods )
-@main-scene 
-    ;tama-update CALL
-    ;ui-update CALL
-RET
 
-( UI methods )
-%UI-Y { #0036 }
+( -------------------------------- )
+( Main scene )
+
+%main-UI-Y { #0036 }
 
 ( available UI Menu slots )
-@ui-slots 
+@main-ui-slots 
     &food 000f =tama-feed
     &sleep 001c =tama-sleep
     &wash &end 0028 =tama-wash
 
+@main-scene-init
+    ;main-ui-init CALL
+    ;tama-init CALL
+RET
+
+@main-scene 
+    ;tama-update CALL
+    ;main-ui-update CALL
+RET
+
 ( init the UI )
-@ui-init 
-    ;ui-slots/food .cursor STZ2
-    #03 ;food ;ui-slots/food LDA2 UI-Y DRAW_TILE POP
-    #03 ;sleep ;ui-slots/sleep LDA2 UI-Y DRAW_TILE POP
-    #03 ;wash ;ui-slots/wash LDA2 UI-Y DRAW_TILE POP
+@main-ui-init 
+    ;main-ui-select .scene/input-a STZ2
+    ;main-ui-left .scene/input-left STZ2
+    ;main-ui-right .scene/input-right STZ2
+
+    ;main-ui-slots/food .cursor STZ2
+    #03 ;food ;main-ui-slots/food LDA2 main-UI-Y DRAW_TILE POP
+    #03 ;sleep ;main-ui-slots/sleep LDA2 main-UI-Y DRAW_TILE POP
+    #03 ;wash ;main-ui-slots/wash LDA2 main-UI-Y DRAW_TILE POP
 RET 
 
-@ui-update 
+@main-ui-update 
     .frame-counter LDZ
     #3f AND #3f EQU ,&draw JCN
         #03 
@@ -210,14 +226,22 @@ RET
     &draw
         #00
     &end
-    ;ui-draw CALL
+    ;main-ui-draw CALL
 RET 
+
+@main-ui-left
+    #00 ;main-ui-move JMP2
+BRK
+
+@main-ui-right
+    #01 ;main-ui-move JMP2
+BRK
 
 ( move ui cursor, 0 -> move left 1 -> move right )
 ( dir -- )
-@ui-move 
+@main-ui-move 
     ( clean last pos )
-    #00 ;ui-draw CALL
+    #00 ;main-ui-draw CALL
     .cursor LDZ2
     ( move according dir in stack )
     ROT 
@@ -228,17 +252,17 @@ RET
     #0004 ADD2
     &end 
     ( boundaries )
-    DUP2 ;ui-slots/end LTH2 ,&check-left JCN
-    POP2 ;ui-slots/end
+    DUP2 ;main-ui-slots/end LTH2 ,&check-left JCN
+    POP2 ;main-ui-slots/end
     &check-left
-    DUP2 ;ui-slots GTH2 ,&after-check JCN
-    POP2 ;ui-slots
+    DUP2 ;main-ui-slots GTH2 ,&after-check JCN
+    POP2 ;main-ui-slots
     &after-check
     .cursor STZ2
 RET
 
 ( activate currently selected option )
-@ui-select 
+@main-ui-select 
     .cursor LDZ2
     #0002 ADD2
     LDA2
@@ -247,8 +271,8 @@ RET
 
 ( draw blinking cursor )
 ( pixel-settings -- )
-@ui-draw 
-    UI-Y #0008 ADD2 .Screen/y DEO2
+@main-ui-draw 
+    main-UI-Y #0008 ADD2 .Screen/y DEO2
     .cursor LDZ2 LDA2 #0003 ADD2 DUP2 .Screen/x DEO2
     ROT DUP
     .Screen/pixel DEO
@@ -258,6 +282,7 @@ RET
 RET 
 
 
+( ------------------------------ )
 ( TAMA methods )
 ( init the tamagotchi )
 @tama-init 
@@ -377,6 +402,15 @@ RET
     00 00 60 90 b0 08 a8 04
     40 40 40 40 80 40 7f 00
     7c 82 aa 82 7c 04 fc 00
+
+@pig-close
+    &animation 
+    01 =pig-bounce/frame-1 01 =pig-bounce/frame-1 01 =pig-bounce/frame-1 01 =pig-bounce/frame-1 01 =pig-close/frame-1 01 =pig-bounce/frame-1 01 =pig-bounce/frame-1 01 =pig-close/frame-1 00
+    &frame-1
+    00 03 04 1d 20 40 40 40
+    00 60 90 b0 08 08 04 7c
+    40 40 40 80 40 37 3f 00
+    82 aa 82 7c 04 68 f8 00
 
 @pig-eating
     &animation 

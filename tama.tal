@@ -111,9 +111,9 @@ BRK
     #0c .epoch/hour STZ
     ( .DateTime/minute DEI )
     #00 .epoch/min STZ
+    ( init tama )
+    ;tama-init CALL
     ( we set main scene as first scene )
-    ;main-scene .scene/update STZ2 
-
     ;main-scene-init CALL
 RET
 
@@ -226,36 +226,29 @@ RET
 
 %main-UI-Y { #0036 }
 
-( available UI Menu slots )
 @main-ui-slots 
     &food 000f =tama-feed
     &sleep 001c =tama-sleep
     &wash &end 0028 =tama-wash
 
 @main-scene-init
-    ;main-ui-init CALL
-    ;tama-init CALL
-RET
-
-@main-scene 
-    ;check-for-events CALL
-    ;tama-update CALL
-    ;main-ui-update CALL
-RET
-
-( init the UI )
-@main-ui-init 
-    ;main-ui-select .scene/input-a STZ2
-    ;main-ui-left .scene/input-left STZ2
-    ;main-ui-right .scene/input-right STZ2
+    ;main-scene-update .scene/update STZ2 
+ 
+    ;main-scene-select .scene/input-a STZ2
+    ;main-scene-left .scene/input-left STZ2
+    ;main-scene-right .scene/input-right STZ2
 
     ;main-ui-slots/food .cursor STZ2
     #03 ;food ;main-ui-slots/food LDA2 main-UI-Y DRAW_TILE POP
     #03 ;sleep ;main-ui-slots/sleep LDA2 main-UI-Y DRAW_TILE POP
     #03 ;wash ;main-ui-slots/wash LDA2 main-UI-Y DRAW_TILE POP
-RET 
 
-@main-ui-update 
+RET
+
+@main-scene-update 
+    ;check-for-events CALL
+    ;tama-update CALL
+
     .frame-counter LDZ
     #3f AND #3f EQU ,&draw JCN
         #03 
@@ -263,22 +256,29 @@ RET
     &draw
         #00
     &end
-    ;main-ui-draw CALL
-RET 
+    ;main-scene-draw CALL
+RET
 
-@main-ui-left
-    #00 ;main-ui-move JMP2
+@main-scene-left
+    #00 ;main-scene-move JMP2
 BRK
 
-@main-ui-right
-    #01 ;main-ui-move JMP2
+@main-scene-right
+    #01 ;main-scene-move JMP2
 BRK
+
+@main-scene-select 
+    .cursor LDZ2
+    #0002 ADD2
+    LDA2
+    CALL
+RET
 
 ( move ui cursor, 0 -> move left 1 -> move right )
 ( dir -- )
-@main-ui-move 
+@main-scene-move 
     ( clean last pos )
-    #00 ;main-ui-draw CALL
+    #00 ;main-scene-draw CALL
     .cursor LDZ2
     ( move according dir in stack )
     ROT 
@@ -298,17 +298,9 @@ BRK
     .cursor STZ2
 RET
 
-( activate currently selected option )
-@main-ui-select 
-    .cursor LDZ2
-    #0002 ADD2
-    LDA2
-    CALL
-RET
-
 ( draw blinking cursor )
 ( pixel-settings -- )
-@main-ui-draw 
+@main-scene-draw 
     main-UI-Y #0008 ADD2 .Screen/y DEO2
     .cursor LDZ2 LDA2 #0003 ADD2 DUP2 .Screen/x DEO2
     ROT DUP
@@ -325,10 +317,13 @@ RET
     ;sleep-scene-input-left .scene/input-left STZ2
     ;sleep-scene-input-right .scene/input-right STZ2
     ;sleep-scene-update .scene/update STZ2
-
+    ( make screen black )
     #01 ;screen-fill CALL
-
+    ( start sleeping animation )
     ;zz/animation .Tama/frame STZ2
+    ( set wake up timer )
+    TIME #0001 ADD2 .Events STZ2
+    ;main-scene-init .Events #02 ADD STZ2
 RET 
 
 @sleep-scene-update 

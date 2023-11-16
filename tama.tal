@@ -117,6 +117,17 @@ BRK
     ;main-scene-init CALL
 RET
 
+( check for pending events )
+@check-for-events
+    .Events LDZ2
+    #0000 EQU2 ,&after-events JCN
+    .Events LDZ2
+    TIME GTH2 ,&after-events JCN
+    .Events #02 ADD LDZ2 CALL
+    #0000 .Events STZ2
+    &after-events
+RET
+
 ( CONTROLLER Methods )
 @on-controller 
     ( -- b )
@@ -227,6 +238,7 @@ RET
 RET
 
 @main-scene 
+    ;check-for-events CALL
     ;tama-update CALL
     ;main-ui-update CALL
 RET
@@ -315,10 +327,13 @@ RET
     ;sleep-scene-update .scene/update STZ2
 
     #01 ;screen-fill CALL
+
+    ;zz/animation .Tama/frame STZ2
 RET 
 
 @sleep-scene-update 
-
+    ;check-for-events CALL
+    ;sleep-scene-draw CALL
 RET 
 
 @sleep-scene-input-a 
@@ -334,7 +349,18 @@ RET
 RET 
 
 @sleep-scene-draw 
-
+    ( last animation value is always 00, so if it's 00, we reset )
+    .Tama/frame LDZ2 #0003 ADD2 
+    DUP2 .Tama/frame STZ2
+    ( [Tama/frame] -- [Tama/frame] )
+    LDAk ,&skip-reset JCN
+        POP2
+        ;zz/animation DUP2 .Tama/frame STZ2
+    &skip-reset
+    LDAk ROT ROT INC2 LDA2
+    .Tama/x LDZ2 #0008 ADD2
+    .Tama/y LDZ2 #0008 SUB2
+    DRAW_TILE POP
 RET
 
 
@@ -351,28 +377,11 @@ RET
     ;tama-hatch-egg .Events #02 ADD STZ2 
 RET
 
-@tama-check-for-events
-( check for pending events )
-    .Events LDZ2
-    #0000 EQU2 ,&after-events JCN
-    .Events LDZ2
-    TIME GTH2 ,&after-events JCN
-    .Events #02 ADD LDZ2 CALL
-    #0000 .Events STZ2
-    &after-events
-RET
-
 ( update tamagotchi state when egg )
 @tama-update-when-egg 
 
 ( update tamagotchi state )
 @tama-update 
-    ;tama-check-for-events CALL
-
-    &after-state
-    .Tama/x LDZ2 .Tama/y LDZ2
-    ;sprite-clean CALL
-    POP2 POP2
     ;tama-draw CALL
 RET
 
@@ -444,6 +453,12 @@ RET
 
 @sleep
     00 06 02 64 26 40 60 00
+
+@zz
+    &animation 
+    04 =sleep 04 =sleep 04 =sleep 04 =zz/frame-1 04 =zz/frame-1 04 =zz/frame-1 00
+    &frame-1
+    06 02 04 76 10 20 40 70
 
 @pig-bounce
     &animation 

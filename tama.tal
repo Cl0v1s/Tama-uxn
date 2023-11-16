@@ -86,9 +86,10 @@
 |0100
     #0040 .Screen/width DEO2
     #0040 .Screen/height DEO2
-    #13ef .System/r DEO2
-    #27af .System/g DEO2
-    #5b7c .System/b DEO2
+
+    #31ef .System/r DEO2
+    #72af .System/g DEO2
+    #b57c .System/b DEO2
 
     ;load-game CALL
 
@@ -182,6 +183,30 @@ RET
     .Screen/addr DEI2 #0008 SUB2 .Screen/addr DEO2
     .Screen/sprite DEO
 RET
+
+( Fill the screen with the specified color )
+( pixel-setting --  )
+@screen-fill 
+    &init 
+        #0000 .Screen/x DEO2
+        #0000 .Screen/y DEO2 
+    &do 
+        DUP .Screen/pixel DEO
+        .Screen/x DEI2 
+        INC2 DUP2 .Screen/x DEO2
+        ( jump to screen-fill/do if [Screen/x] < [Screen/width] )
+        .Screen/width DEI2 LTH2 
+        ,&do JCN
+        ( else )
+        #0000 .Screen/x DEO2
+        .Screen/y DEI2
+        INC2 DUP2 .Screen/y DEO2
+        ( jump to screen-fill/do if [Screen/y] < [Screen/height] )
+        .Screen/height DEI2 LTH2
+        ,&do JCN
+        ( else )
+    POP
+RET 
 
 ( SCENE methods )
 
@@ -281,6 +306,37 @@ RET
     .Screen/pixel DEO
 RET 
 
+( --- )
+( Sleep Scene )
+@sleep-scene-init 
+    ;sleep-scene-input-a .scene/input-a STZ2
+    ;sleep-scene-input-left .scene/input-left STZ2
+    ;sleep-scene-input-right .scene/input-right STZ2
+    ;sleep-scene-update .scene/update STZ2
+
+    #01 ;screen-fill CALL
+RET 
+
+@sleep-scene-update 
+
+RET 
+
+@sleep-scene-input-a 
+
+RET 
+
+@sleep-scene-input-left 
+
+RET 
+
+@sleep-scene-input-right 
+
+RET 
+
+@sleep-scene-draw 
+
+RET
+
 
 ( ------------------------------ )
 ( TAMA methods )
@@ -326,13 +382,13 @@ RET
 RET
 
 ( make tama eat )
-@tama-feed 
+@tama-feed
     ;pig-eating/animation .Tama/frame STZ2
 RET 
 
 ( make tama sleep )
 @tama-sleep
-    #33 .Console/write DEO
+    ;sleep-scene-init CALL
 RET
 
 ( make tama clean )

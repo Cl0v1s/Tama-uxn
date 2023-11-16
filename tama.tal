@@ -72,7 +72,7 @@
         &day $1
         &hour $1
         &min $1
-    @Events $6
+    @events $6
     @Tama 
         &frame $2
         &x $2
@@ -101,6 +101,60 @@ BRK
 ( Methods )
 
 ( MISC )
+( create a new list, a list can only contains up to 16 items )
+( list-addr list-size -- )
+@list-create 
+    ( low nibble for current size, high nibble for max size )
+    #40 SFT 
+    #f0 AND 
+    SWP STZ
+RET
+
+( list-addr item -- )
+@list-push
+    ( list-addr item -- item list-addr )
+    SWP 
+    ( item list-addr -- item list-addr [list-addr] [list-addr] )
+    DUP LDZ DUP 
+    ( item list-addr [list-addr] [list-addr] -- item list-addr [list-addr] [list-addr>>4] )
+    #04 SFT
+    ( item list-addr [list-addr] [list-addr>>4] -- item list-addr [list-addr>>4] [list-addr] )
+    SWP 
+    #0f AND
+    GTH ,&after-check JCN 
+    ( if max-size<=current-size )
+        POP2
+        RET 
+    &after-check
+        ( item list-addr -- item list-addr list-addr list-addr )
+        DUP DUP
+        ( item list-addr list-addr list-addr -- item list-addr list-length )
+        LDZ DUP #0f AND INC SWP #f0 AND ORA DUP ROT STZ #0f AND
+        ADD STZ 
+    RET
+
+( list-addr -- first-item )
+@list-shift
+    ( list-addr -- list-addr list-addr list-addr )
+    DUP DUP 
+    ( list-addr list-addr list-addr -- list-addr value list-addr list-addr  )
+    DUP INC LDZ ROT ROT
+    ( list-addr value list-addr list-addr -- list-addr value list-addr list-length )
+    LDZ #0f AND
+    ( list-addr value list-addr list-length -- list-addr value list-addr list-length )
+    &loop 
+    DUP #00 EQU ,&end JCN
+    ( list-addr value list-addr list-length -- list-addr value list-addr list-length - 1 )
+    #01 SUB 
+    ( list-addr value list-addr list-length - 1 -- list-addr value list-length - 1 current-cell current-cell current-cell + 1 )
+    SWP INC DUP DUP INC 
+    ( list-addr value list-length - 1 current-cell current-cell current-cell + 1 -- list-addr value list-length - 1 current-cell )
+    LDZ SWP STZ
+    SWP ,&loop JMP
+    &end 
+    POP2
+    SWP DUP LDZ #01 SUB SWP STZ
+RET
 
 ( load game save (stub for now) )
 @load-game 
@@ -119,12 +173,12 @@ RET
 
 ( check for pending events )
 @check-for-events
-    .Events LDZ2
+    .events LDZ2
     #0000 EQU2 ,&after-events JCN
-    .Events LDZ2
+    .events LDZ2
     TIME GTH2 ,&after-events JCN
-    .Events #02 ADD LDZ2 CALL
-    #0000 .Events STZ2
+    .events #02 ADD LDZ2 CALL
+    #0000 .events STZ2
     &after-events
 RET
 
@@ -322,8 +376,8 @@ RET
     ( start sleeping animation )
     ;zz/animation .Tama/frame STZ2
     ( set wake up timer )
-    TIME #0001 ADD2 .Events STZ2
-    ;main-scene-init .Events #02 ADD STZ2
+    TIME #0001 ADD2 .events STZ2
+    ;main-scene-init .events #02 ADD STZ2
 RET 
 
 @sleep-scene-update 
@@ -368,8 +422,8 @@ RET
     #0018 .Tama/y STZ2
     TAMA_EGG .Tama/state STZ
 
-    TIME #0001 ADD2 .Events STZ2 
-    ;tama-hatch-egg .Events #02 ADD STZ2 
+    TIME #0001 ADD2 .events STZ2 
+    ;tama-hatch-egg .events #02 ADD STZ2 
 RET
 
 ( update tamagotchi state when egg )

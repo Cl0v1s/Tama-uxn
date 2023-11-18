@@ -72,7 +72,8 @@
         &day $1
         &hour $1
         &min $1
-    @events $6
+    @events $c
+        &end
     @Tama 
         &frame $2
         &x $2
@@ -101,19 +102,29 @@ BRK
 ( Methods )
 
 ( MISC )
+
+
+@phex ( short* -- )
+	SWP phex/b
+	&b ( -- )
+		DUP #04 SFT phex/c
+	&c ( -- )
+		#0f AND DUP #09 GTH #27 MUL ADD [ LIT "0 ] ADD #18 DEO
+		JMP2r
+
 ( create a new list, a list can only contains up to 16 items )
-( list-addr list-size -- )
+( list-size list-addr -- )
 @list-create 
+    SWP
     ( low nibble for current size, high nibble for max size )
     #40 SFT 
     #f0 AND 
-    SWP STZ
+    SWP 
+    STZ
 RET
 
-( list-addr item -- )
+( item list-addr -- )
 @list-push
-    ( list-addr item -- item list-addr )
-    SWP 
     ( item list-addr -- item list-addr [list-addr] [list-addr] )
     DUP LDZ DUP 
     ( item list-addr [list-addr] [list-addr] -- item list-addr [list-addr] [list-addr>>4] )
@@ -128,10 +139,31 @@ RET
     &after-check
         ( item list-addr -- item list-addr list-addr list-addr )
         DUP DUP
-        ( item list-addr list-addr list-addr -- item list-addr list-length )
-        LDZ DUP #0f AND INC SWP #f0 AND ORA DUP ROT STZ #0f AND
-        ADD STZ 
+        LDZ INC SWP STZ DUP LDZ #0f AND ADD STZ
     RET
+
+( index list-addr -- )
+@list-delete 
+    ( remove 1 to list length: index list-addr -- list-length index list-addr )
+    DUP DUP LDZ DUP #01 SUB ROT STZ
+    ( index list-addr list-size )
+    #04 SFT
+    SWP INC SWP 
+    ROT 
+    &loop
+    ( list-addr+1 list-size index -- list-addr+1 list-size index )
+    DUP2 EQU ,&end JCN
+        ROT DUP2 ADD
+        DUP INC LDZ
+        SWP 
+        STZ
+        ( x -- list-addr+1 list-size index+1 )
+        ROT ROT INC 
+        ,&loop JMP
+    &end 
+    POP2 
+    POP
+RET
 
 ( list-addr -- first-item )
 @list-shift
@@ -165,6 +197,9 @@ RET
     #0c .epoch/hour STZ
     ( .DateTime/minute DEI )
     #00 .epoch/min STZ
+    ( init events list )
+    #0c .events ;list-create CALL
+
     ( init tama )
     ;tama-init CALL
     ( we set main scene as first scene )
@@ -173,14 +208,35 @@ RET
 
 ( check for pending events )
 @check-for-events
-    .events LDZ2
-    #0000 EQU2 ,&after-events JCN
-    .events LDZ2
-    TIME GTH2 ,&after-events JCN
-    .events #02 ADD LDZ2 CALL
-    #0000 .events STZ2
-    &after-events
-RET
+    ( -- list-length )
+    .events LDZ #0f AND
+    &loop 
+        DUP #00 EQU ;check-for-events/end JCN2
+        ( list-length -- list-length curr )
+        DUP .events ADD #03 SUB
+        ( list-length cur -- list-length cur [cur] )
+        DUP LDZ2
+        TIME GTH2 ,&continue JCN
+        ( list-length cur -- list-length cur cur+2 )
+        DUP #02 ADD
+        ( list-length cur cur+2 -- list-length cur )
+        LDZ2 CALL
+        ( list-length cur -- list-length index )
+        .events #01 ADD SUB
+        DUP #03 ADD .events ;list-delete CALL
+        DUP #02 ADD .events ;list-delete CALL
+        DUP #01 ADD .events ;list-delete CALL
+        DUP .events ;list-delete CALL
+        ( list-length index -- )
+        &continue
+        ( list-length cur -- list-length-4 )
+        POP
+        #04 SUB
+        ;check-for-events/loop JMP2
+    &end 
+    ( list-length -- )
+    POP
+RET 
 
 ( CONTROLLER Methods )
 @on-controller 
@@ -287,6 +343,10 @@ RET
 
 @main-scene-init
     ;main-scene-update .scene/update STZ2 
+   ( make screen white )
+    #00 ;screen-fill CALL
+    ( reset tama )
+    ;tama-reset-frame CALL POP2
  
     ;main-scene-select .scene/input-a STZ2
     ;main-scene-left .scene/input-left STZ2
@@ -376,8 +436,15 @@ RET
     ( start sleeping animation )
     ;zz/animation .Tama/frame STZ2
     ( set wake up timer )
-    TIME #0001 ADD2 .events STZ2
-    ;main-scene-init .events #02 ADD STZ2
+    TIME #0001 ADD2
+    SWP 
+    .events ;list-push CALL
+    .events ;list-push CALL
+    
+    ;main-scene-init 
+    SWP 
+    .events ;list-push CALL
+    .events ;list-push CALL
 RET 
 
 @sleep-scene-update 
@@ -422,8 +489,20 @@ RET
     #0018 .Tama/y STZ2
     TAMA_EGG .Tama/state STZ
 
-    TIME #0001 ADD2 .events STZ2 
-    ;tama-hatch-egg .events #02 ADD STZ2 
+    ( will hatch in 1 min, store in list )
+    TIME #0001 ADD2
+    SWP 
+    ( store high byte )
+    .events ;list-push CALL
+    ( store low byte )
+    .events ;list-push CALL
+
+    ;tama-hatch-egg
+    SWP 
+    ( store high byte )
+    .events ;list-push CALL
+    ( store low byte )
+    .events ;list-push CALL
 RET
 
 ( update tamagotchi state when egg )

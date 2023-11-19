@@ -305,6 +305,28 @@ RET
     .Screen/sprite DEO
 RET
 
+( draw a vertical line with y1 <= y2, y2 excluded )
+( pixel-setting y1* y2* x*  -- )
+@screen-y-line 
+    .Screen/x DEO2
+    SWP2 
+    &loop
+        ( pixel-setting y2* y1* -- pixel-setting  y2* )
+        .Screen/y DEO2
+        ( pixel-setting y2* -- y2* pixel-setting )
+        ROT DUP
+        .Screen/pixel DEO
+        ( y2* pixel-setting -- pixel-setting y2* y2* )
+        ROT ROT DUP2
+        ( pixel-setting y2* -- pixel-setting y2* y2* y1*+1 y1*+1 )
+        .Screen/y DEI2 INC2 DUP2
+        ( pixel-setting y2* -- pixel-setting y2* y1*+1 y1*+1 y2* )
+        ROT2
+        ( pixel-setting y2* y1*+1 y1*+1 y2* -- pixel-setting y2* y1*+1 )
+        LTH2 ,&loop JCN 
+    POP2 POP2 POP    
+RET 
+
 ( Fill the screen with the specified color )
 ( pixel-setting --  )
 @screen-fill 
@@ -360,7 +382,6 @@ RET
 RET
 
 @main-scene-update 
-    ;check-for-events CALL
     ;tama-update CALL
 
     .frame-counter LDZ
@@ -371,6 +392,7 @@ RET
         #00
     &end
     ;main-scene-draw CALL
+    ;check-for-events CALL
 RET
 
 @main-scene-left
@@ -448,20 +470,17 @@ RET
 RET 
 
 @sleep-scene-update 
-    ;check-for-events CALL
     ;sleep-scene-draw CALL
+    ;check-for-events CALL
 RET 
 
 @sleep-scene-input-a 
-
 RET 
 
 @sleep-scene-input-left 
-
 RET 
 
 @sleep-scene-input-right 
-
 RET 
 
 @sleep-scene-draw 
@@ -479,6 +498,40 @@ RET
     DRAW_TILE POP
 RET
 
+
+( ----------------- )
+( CLEAN scene )
+@clean-scene-init 
+    ;clean-scene-update .scene/update STZ2
+    ;clean-scene-input-a .scene/input-a STZ2
+    ;clean-scene-input-right .scene/input-right STZ2
+    ;clean-scene-input-left .scene/input-left STZ2
+
+    #00 ;screen-fill CALL 
+
+    #00 .cursor STZ
+    #01 #0000 .Screen/height DEI2 #0000 ;screen-y-line CALL
+RET
+
+@clean-scene-update
+    #00 #0000 .Screen/height DEI2 #00 .cursor LDZ ;screen-y-line CALL 
+    .cursor LDZ INC .cursor STZ
+    #01 #0000 .Screen/height DEI2 #00 .cursor LDZ ;screen-y-line CALL 
+
+    #00 .cursor LDZ .Screen/width DEI2 GTH2 ,&quit JCN
+    RET
+    &quit
+    ;main-scene-init CALL
+BRK
+
+@clean-scene-input-a
+RET 
+
+@clean-scene-input-right
+RET 
+
+@clean-scene-input-left
+RET
 
 ( ------------------------------ )
 ( TAMA methods )
@@ -530,7 +583,7 @@ RET
 
 ( make tama clean )
 @tama-wash 
-    #34 .Console/write DEO
+    ;clean-scene-init CALL
 RET 
 
 ( reset frame according to tama state )

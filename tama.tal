@@ -266,14 +266,7 @@ BRK
 ( SCREEN Methods )
 ( Run each frames )
 @on-screen
-    .frame-counter LDZk INC SWP STZk POP
-    #0f AND
-    #0f EQU
-    ,&update JCN
-    ,&end JMP
-    &update 
-        .scene/update LDZ2 CALL
-    &end
+    .scene/update LDZ2 CALL
 BRK
 
 ( Clean & 16x16 sprite on screen )
@@ -383,14 +376,6 @@ RET
 
 @main-scene-update 
     ;tama-update CALL
-
-    .frame-counter LDZ
-    #3f AND #3f EQU ,&draw JCN
-        #03 
-        ,&end JMP
-    &draw
-        #00
-    &end
     ;main-scene-draw CALL
     ;check-for-events CALL
 RET
@@ -413,9 +398,9 @@ RET
 ( move ui cursor, 0 -> move left 1 -> move right )
 ( dir -- )
 @main-scene-move 
+    #00 ;main-scene-draw-cursor CALL
     ( clean last pos )
-    #00 ;main-scene-draw CALL
-    .cursor LDZ2
+    .cursor LDZ2 
     ( move according dir in stack )
     ROT 
     #00 GTH ,&right JCN
@@ -434,16 +419,28 @@ RET
     .cursor STZ2
 RET
 
+( pixel-setting -- )
+@main-scene-draw-cursor 
+    main-UI-Y #0008 ADD2 .Screen/y DEO2
+    ( pixel-setting [cursor] )
+    .cursor LDZ2 LDA2 #0003 ADD2 DUP2 .Screen/x DEO2
+    ROT DUP .Screen/pixel DEO
+    ROT ROT 
+    INC .Screen/x DEO2
+    .Screen/pixel DEO
+RET 
+
 ( draw blinking cursor )
 ( pixel-settings -- )
 @main-scene-draw 
-    main-UI-Y #0008 ADD2 .Screen/y DEO2
-    .cursor LDZ2 LDA2 #0003 ADD2 DUP2 .Screen/x DEO2
-    ROT DUP
-    .Screen/pixel DEO
-    ROT ROT
-    INC .Screen/x DEO2
-    .Screen/pixel DEO
+    .frame-counter LDZ 
+    INC
+    DUP .frame-counter STZ 
+    #0f AND #0f EQU ,&continue JCN 
+    RET 
+    &continue
+    ;tama-draw CALL
+    #03 ;main-scene-draw-cursor CALL
 RET 
 
 ( --- )
@@ -484,6 +481,13 @@ RET
 RET 
 
 @sleep-scene-draw 
+    .frame-counter LDZ 
+    INC
+    DUP .frame-counter STZ 
+    #0f AND #0f EQU ,&continue JCN 
+    RET 
+    &continue
+
     ( last animation value is always 00, so if it's 00, we reset )
     .Tama/frame LDZ2 #0003 ADD2 
     DUP2 .Tama/frame STZ2
@@ -563,7 +567,6 @@ RET
 
 ( update tamagotchi state )
 @tama-update 
-    ;tama-draw CALL
 RET
 
 ( hatch egg )

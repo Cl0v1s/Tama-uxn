@@ -258,7 +258,7 @@ RET
         #04 SUB 
         ,&loop JMP 
     &end  
-    (index -- )
+    ( index -- )
     POP
 RET 
 
@@ -573,7 +573,7 @@ RET
     SWP 
     .entities ;list-push CALL
     .entities ;list-push CALL
-    SWP 
+    SWP
     ( y x -- y )
     .entities ;list-push CALL 
     ( y -- )
@@ -608,7 +608,7 @@ RET
 ( index -- )
 @poop-draw 
     ( last animation value is always 00, so if it's 00, we reset )
-    #04 MUL #02 ADD
+    #04 MUL .entities ADD #01 ADD
     ( index-callback -- index-callback frame* )
     ;poop-frame LDA2 #0003 ADD2
     ( index-callback frame* -- index-callback frame* )
@@ -620,16 +620,16 @@ RET
     &skip-reset
     ( frame* -- frame* )
     ( -- index-callback )
-    ROT ROT STH
+    ROT STH
     ( frame* -- [frame*] frame* )
     ( index-callback -- index-callback )
     LDAk ROT ROT 
     ( frame* -- [frame*] [frame*+1]* index-callback )
     ( index-callback --  )
     INC2 LDA2 STHr
-    #02 ADD 
-    ( frame* -- [frame*] [frame*+1]* [index-callback+2] [index-callback+3] )
-    LDZk SWP INC LDZ
+    #02 ADD
+    ( [frame*] [frame*+1]* index-callback -- [frame*] [frame*+1]* [index-callback+2] [index-callback+3] )
+    LDZk #00 SWP ROT LDZ #00 SWP
     DRAW_TILE POP
 RET 
 

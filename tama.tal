@@ -72,10 +72,10 @@
         &day $1
         &hour $1
         &min $1
-    ( timing events, timestamp* callback* )
+    ( timing events 3 max, timestamp* callback* )
     @events $c
-    ( objects on scene, update_callback* data1* data2* )
-    @entities $12
+    ( objects on scene 3 max, update_callback* data* )
+    @entities $c
     ( tama stats )
     @Tama 
         &frame $2
@@ -240,6 +240,25 @@ RET
         ;check-for-events/loop JMP2
     &end 
     ( list-length -- )
+    POP
+RET 
+
+( manage entities system and callbacks )
+@entities-update 
+    ( -- index )
+    .entities LDZ #0f AND
+    &loop 
+        ( index -- index )
+        DUP #00 EQU ,&end JCN
+        ( index -- index index callback* )
+        DUP DUP .events ADD #03 SUB LDZ2
+        ( index index callback* -- index )
+        CALL 
+        ( index -- index-4 )
+        #04 SUB 
+        ,&loop JMP 
+    &end  
+    (index -- )
     POP
 RET 
 
@@ -544,6 +563,9 @@ RET
 
 ( ------------------------------ )
 ( POOP methods )
+
+@poop-frame $2
+
 ( store a new poop with callback* animation-frame* x y )
 ( x y -- )
 @poop-init 
@@ -556,19 +578,14 @@ RET
     .entities ;list-push CALL 
     ( y -- )
     .entities ;list-push CALL 
-    ;zz/animation 
-    SWP 
-    .entities ;list-push CALL
-    .entities ;list-push CALL
+    ;zz/animation ;poop-frame STA2
 RET 
 
 ( remove a poop from entities list )
 ( index -- )
 @poop-delete 
-    #06 MUL #05 ADD
+    #04 MUL #03 ADD
     DUP .entities ;list-delete CALL
-    #01 SUB DUP .entities ;list-delete CALL
-    #01 SUB DUP .entities ;list-delete CALL
     #01 SUB DUP .entities ;list-delete CALL
     #01 SUB DUP .entities ;list-delete CALL
     #01 SUB .entities ;list-delete CALL
@@ -577,37 +594,44 @@ RET
 ( updates a poop )
 ( index --  )
 @poop-update
+    .frame-counter LDZ 
+    #0f AND #0f EQU ,&draw JCN
+        ( index -- )
+        POP
+        RET
+    &draw
+    ( index -- )
+    ;poop-draw CALL
+RET
+
+( daws a poop )
+( index -- )
+@poop-draw 
     ( last animation value is always 00, so if it's 00, we reset )
-    #06 MUL #02 ADD
+    #04 MUL #02 ADD
     ( index-callback -- index-callback frame* )
-    DUP LDZ2 #0003 ADD2 
-    ( index-callback frame* -- frame* index-callback )
-    ROT STZ2k 
-    ( frame* index-callback -- index-callback frame* )
-    ROT ROT 
+    ;poop-frame LDA2 #0003 ADD2
+    ( index-callback frame* -- index-callback frame* )
+    DUP2 ;poop-frame STA2
     ( index-callback frame* -- index-callback frame* )
     LDAk ,&skip-reset JCN
         POP2
-        ;zz/animation ROT STZ2k ROT ROT 
+        ;zz/animation DUP2 ;poop-frame STA2
     &skip-reset
-    ( index-callback frame* -- index-callback )
-    ( -- frame* )
-    STH2r 
+    ( frame* -- frame* )
+    ( -- index-callback )
+    ROT ROT STH
+    ( frame* -- [frame*] frame* )
     ( index-callback -- index-callback )
-    ( frame* -- [frame*] [frame+2*]* )
-    LDAkr ROTr ROTr INC2r LDA2r
-    ( index-callback -- [frame*] index-callback )
-    ( [frame*] [frame+2*]* -- [frame+2*]* )
-    ROTr ROTr STHr SWP
-    ( [frame*] index-callback -- [frame*] 00 x 00 index-callback )
-    ( [frame*] [frame+2*]* -- [frame+2*]* )
-    #00 SWP #02 ADD LDZk #00 ROT ROT SWP
-    ( [frame*] 00 x 00 index-callback -- [frame*] 00 x 00 y [frame+2*]* )
-    ( [frame*] [frame+2*]* -- )
-    INC LDZ STH2r
+    LDAk ROT ROT 
+    ( frame* -- [frame*] [frame*+1]* index-callback )
+    ( index-callback --  )
+    INC2 LDA2 STHr
+    #02 ADD 
+    ( frame* -- [frame*] [frame*+1]* [index-callback+2] [index-callback+3] )
+    LDZk SWP INC LDZ
     DRAW_TILE POP
-
-RET
+RET 
 
 ( TAMA methods )
 ( init the tamagotchi )

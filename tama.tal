@@ -54,6 +54,7 @@
 
 %TAMA_EGG { #00 }
 %TAMA_BABY { #01 }
+%TAMA_DEAD { #ff }
 
 ( Structs )
 
@@ -95,6 +96,8 @@
     #72af .System/g DEO2
     #b57c .System/b DEO2
 
+    ;prng-init CALL
+
     ;load-game CALL
 
     ;on-screen .Screen/vector DEO2
@@ -105,6 +108,26 @@ BRK
 ( Methods )
 
 ( MISC )
+
+@prng-init ( -- )
+	( seed )
+	#00 .DateTime/second DEI
+	#00 .DateTime/minute DEI #60 SFT2 EOR2
+	#00 .DateTime/hour DEI #c0 SFT2 EOR2 ,prng/x STR2
+	#00 .DateTime/hour DEI #04 SFT2
+	#00 .DateTime/day DEI #10 SFT2 EOR2
+	#00 .DateTime/month DEI #60 SFT2 EOR2
+		.DateTime/year DEI2 #a0 SFT2 EOR2 ,prng/y STR2
+JMP2r
+
+@prng ( -- number* )
+	LIT2 &x $2
+	DUP2 #50 SFT2 EOR2
+	DUP2 #03 SFT2 EOR2
+	LIT2 &y $2 DUP2 ,&x STR2
+	DUP2 #01 SFT2 EOR2 EOR2
+	,&y STR2k POP
+JMP2r
 
 
 @phex ( short* -- )
@@ -251,13 +274,13 @@ RET
         ( index -- index )
         DUP #00 EQU ,&end JCN
         ( index -- index entity-id index )
-        DUP #04 SUB SWP DUP ROT ROT
+        DUP #04 SUB #04 DIV SWP DUP ROT ROT
         ( index entity-id index -- index entity-id callback )
         #03 SUB .entities ADD
         ( index entity-id callback -- index entity-id [callback]* )
         LDZ2
         CALL
-        (index -- index-4 )
+        ( index -- index-4 )
         #04 SUB
         ,&loop JMP 
     &end  
@@ -570,8 +593,13 @@ RET
 @poop-frame $2
 
 ( store a new poop with callback* animation-frame* x y )
-( x y -- )
 @poop-init 
+    ( get one byte only )
+    ( -- x )
+    ;prng CALL POP #39 AND
+
+    ( x -- x y )
+    #28
     ;poop-update 
     SWP 
     .entities ;list-push CALL
@@ -629,9 +657,9 @@ RET
     DUP2 LDA ROT ROT
     ( [frame*] frame* -- [frame*] [frame*+1]* index-callback )
     ( index-callback --  )
-    INC2 LDA2 STHr
+    INC2 LDA2 STHr #02 ADD
     ( [frame*] [frame*+1]* index-callback -- [frame*] [frame*+1]* [index-callback+2] [index-callback+3] )
-    LDZk #00 SWP ROT LDZ #00 SWP
+    LDZk #00 SWP ROT INC LDZ #00 SWP
     DRAW_TILE POP
 RET 
 
@@ -643,7 +671,94 @@ RET
     #0018 .Tama/y STZ2
     TAMA_EGG .Tama/state STZ
 
-    ( will hatch in 1 min, store in list )
+    ( set stats at 100 )
+    #64 .Tama/happy STZ
+    #64 .Tama/hunger STZ
+    #64 .Tama/strain STZ
+    #64 .Tama/poop STZ
+
+    ( first update run happens 2min after startup )
+    ( TODO: #0002 instead of #0000 )
+    TIME #0000 ADD2
+    SWP 
+    ( store high byte )
+    .events ;list-push CALL
+    ( store low byte )
+    .events ;list-push CALL
+    ;tama-update-stats 
+    SWP 
+    ( store high byte )
+    .events ;list-push CALL
+    ( store low byte )
+    .events ;list-push CALL
+RET
+
+@tama-update-poop 
+    #00 .Tama/poop STZ
+    ( -- poop%32 )
+    .Tama/poop LDZ #00 EQU
+    ,&do JCN
+        RET
+    &do
+    ( if poop === 0 )
+        ;poop-init CALL
+        #64 .Tama/poop STZ
+RET
+
+( Update tama stats when egg )
+@tama-update-stats-egg
+    TAMA_BABY .Tama/state STZ
+
+    ( when hatching, hunger is set to 25 )
+    #19 .Tama/hunger STZ
+RET 
+
+( Update tama stats when baby )
+@tama-update-stats-baby 
+    ( we loose 3 hunger each min, to it's 30 in ten minutes )
+    ( -- hunger<0 )
+    .Tama/hunger LDZ #03 SUBC SWP .Tama/hunger STZ 
+    ( hunger < 0 -- )
+    ,&dead JCN
+        ( we loose 5 poop each min )
+        .Tama/poop LDZ #05 SUB .Tama/poop STZ 
+    RET 
+    &dead 
+        ;tama-update-stats-dead CALL
+RET
+
+@tama-update-stats-dead 
+    ( update tama state )
+    TAMA_DEAD .Tama/state STZ
+    ( we cancel every events )
+    #c0 .events STZ
+RET
+
+( Update tama stats, run each minute )
+@tama-update-stats 
+    ( first update run happens 2min after startup )
+    ( manage age, at first run we are an egg, when this is called, it's time to hatch )
+    .Tama/state LDZ
+    DUP TAMA_EGG EQU ,&update-egg JCN
+    DUP TAMA_BABY EQU ,&update-baby JCN
+    DUP TAMA_DEAD EQU ,&update-dead JCN
+
+    ,&after-switch JMP
+    &update-egg 
+        ;tama-update-stats-egg CALL
+        ,&after-switch JMP
+    &update-baby 
+        ;tama-update-stats-baby CALL 
+        ,&after-switch JMP 
+    &update-dead 
+        ;tama-update-stats-dead CALL 
+        ,&after-switch JMP 
+    &after-switch
+    POP
+
+    ;tama-update-poop CALL
+
+    ( reschedule in 1 min )
     TIME #0001 ADD2
     SWP 
     ( store high byte )
@@ -651,7 +766,7 @@ RET
     ( store low byte )
     .events ;list-push CALL
 
-    ;tama-hatch-egg
+    ;tama-update-stats 
     SWP 
     ( store high byte )
     .events ;list-push CALL
@@ -659,16 +774,9 @@ RET
     .events ;list-push CALL
 RET
 
-( update tamagotchi state when egg )
-@tama-update-when-egg 
 
 ( update tamagotchi state )
 @tama-update 
-RET
-
-( hatch egg )
-@tama-hatch-egg
-    TAMA_BABY .Tama/state STZ
 RET
 
 ( make tama eat )

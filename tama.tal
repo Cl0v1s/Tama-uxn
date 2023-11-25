@@ -398,9 +398,6 @@ RET
     #03 ;food ;main-ui-slots/food LDA2 main-UI-Y DRAW_TILE POP
     #03 ;sleep ;main-ui-slots/sleep LDA2 main-UI-Y DRAW_TILE POP
     #03 ;wash ;main-ui-slots/wash LDA2 main-UI-Y DRAW_TILE POP
-
-    #08 #08 ;poop-init CALL
-
 RET
 
 @main-scene-update 
@@ -556,7 +553,7 @@ RET
     RET
     &quit
     ;main-scene-init CALL
-BRK
+RET
 
 @clean-scene-input-a
 RET 

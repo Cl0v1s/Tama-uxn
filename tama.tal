@@ -72,10 +72,6 @@
         &day $1
         &hour $1
         &min $1
-    ( timing events 3 max, timestamp* callback* )
-    @events $c
-    ( objects on scene 3 max, update_callback* data* )
-    @entities $c
     ( tama stats )
     @Tama 
         &frame $2
@@ -86,6 +82,10 @@
         &hunger $1
         &strain $1
         &poop $1
+    ( timing events 3 max, timestamp* callback* )
+    @events $1 $c
+    ( objects on scene 3 max, update_callback* data* )
+    @entities $1 $c
 
 |0100
     #0040 .Screen/width DEO2
@@ -244,18 +244,21 @@ RET
 RET 
 
 ( manage entities system and callbacks )
-@entities-update 
+@entities-update
     ( -- index )
     .entities LDZ #0f AND
     &loop 
         ( index -- index )
         DUP #00 EQU ,&end JCN
-        ( index -- index index callback* )
-        DUP DUP .events ADD #03 SUB LDZ2
-        ( index index callback* -- index )
-        CALL 
-        ( index -- index-4 )
-        #04 SUB 
+        ( index -- index entity-id index )
+        DUP #04 SUB SWP DUP ROT ROT
+        ( index entity-id index -- index entity-id callback )
+        #03 SUB .entities ADD
+        ( index entity-id callback -- index entity-id [callback]* )
+        LDZ2
+        CALL
+        (index -- index-4 )
+        #04 SUB
         ,&loop JMP 
     &end  
     ( index -- )
@@ -396,10 +399,13 @@ RET
     #03 ;sleep ;main-ui-slots/sleep LDA2 main-UI-Y DRAW_TILE POP
     #03 ;wash ;main-ui-slots/wash LDA2 main-UI-Y DRAW_TILE POP
 
+    #08 #08 ;poop-init CALL
+
 RET
 
 @main-scene-update 
     ;tama-update CALL
+    ;entities-update CALL
     ;main-scene-draw CALL
     ;check-for-events CALL
 RET
@@ -594,7 +600,7 @@ RET
 ( updates a poop )
 ( index --  )
 @poop-update
-    .frame-counter LDZ 
+    .frame-counter LDZ
     #0f AND #0f EQU ,&draw JCN
         ( index -- )
         POP
@@ -618,16 +624,15 @@ RET
         POP2
         ;zz/animation DUP2 ;poop-frame STA2
     &skip-reset
-    ( frame* -- frame* )
+    ( index-callback frame* -- frame* )
     ( -- index-callback )
     ROT STH
     ( frame* -- [frame*] frame* )
     ( index-callback -- index-callback )
-    LDAk ROT ROT 
-    ( frame* -- [frame*] [frame*+1]* index-callback )
+    DUP2 LDA ROT ROT
+    ( [frame*] frame* -- [frame*] [frame*+1]* index-callback )
     ( index-callback --  )
     INC2 LDA2 STHr
-    #02 ADD
     ( [frame*] [frame*+1]* index-callback -- [frame*] [frame*+1]* [index-callback+2] [index-callback+3] )
     LDZk #00 SWP ROT LDZ #00 SWP
     DRAW_TILE POP

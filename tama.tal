@@ -720,13 +720,39 @@ RET
     .events ;list-push CALL
 RET
 
+( Update a stat at given adress, by decreasing by given amount. Caped at #00 and return #01 if caped )
+( amount stat-addr -- caped )
+@tama-update-stat 
+    ( amount stat-addr -- amount stat-addr stat-value )
+    DUP LDZ 
+    ( amount stat-addr stat-value -- stat-addr stat-value-amount carry )
+    ROT SUBC
+    ,&caped JCN
+        SWP STZ 
+        #00 
+    RET
+    &caped 
+        POP 
+        #00
+        SWP
+        STZ 
+        #01
+RET 
+
+( update poop counter and make poop spawn )
+( amount -- )
 @tama-update-poop 
-    ( -- poop%32 )
-    .Tama/poop LDZ #00 EQU
+    ( amount -- poop-amount carry )
+    .Tama/poop LDZ SWP SUBC 
     ,&do JCN
+        ( if poop >= 0 )
+        ( poop-amount -- )
+        .Tama/poop STZ
         RET
     &do
-    ( if poop === 0 )
+        ( if poop < 0 )
+        ( poop-amount -- )
+        POP
         ;poop-init CALL
         #64 .Tama/poop STZ
 RET
@@ -743,12 +769,23 @@ RET
 @tama-update-stats-baby 
     ( we loose 3 hunger each min, to it's 30 in ten minutes )
     ( -- hunger<0 )
-    .Tama/hunger LDZ #03 SUBC SWP .Tama/hunger STZ 
-    ( hunger < 0 -- )
-    ,&dead JCN
-        ( we loose 5 poop each min )
-        .Tama/poop LDZ #05 SUB .Tama/poop STZ 
-    RET 
+    #03 .Tama/hunger ;tama-update-stat CALL
+    ( hunger<0 -- hunger<0 strain<0 )
+    #0a .Tama/strain ;tama-update-stat CALL
+    ( hunger<0 strain<0 -- unhealthy )
+    ORA
+    ( we loose 5 poop each min )
+    #05 ;tama-update-poop CALL
+    ,&unhealthy JCN
+        ( if hunger >= 0 or strain >= 0 )
+        RET 
+    &unhealthy 
+        ( if hunger < 0 or strain <0 )
+        ( -- happy<0 )
+        #05 .Tama/happy ;tama-update-stat CALL
+        ,&dead JCN 
+            ( if happy >= 0 )
+            RET 
     &dead 
         ;tama-update-stats-dead CALL
 RET
@@ -782,7 +819,6 @@ RET
     &after-switch
     POP
 
-    ;tama-update-poop CALL
 
     ( reschedule in 1 min )
     TIME #0001 ADD2

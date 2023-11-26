@@ -139,9 +139,13 @@ JMP2r
 		JMP2r
 
 @print-stats 
+    LIT2 "ah .Console/write DEO .Console/write DEO
     #00 .Tama/happy LDZ ;phex CALL #0a .Console/write DEO
+    LIT2 "uh .Console/write DEO .Console/write DEO
     #00 .Tama/hunger LDZ ;phex CALL #0a .Console/write DEO
+    LIT2 "ts .Console/write DEO .Console/write DEO
     #00 .Tama/strain LDZ ;phex CALL #0a .Console/write DEO
+    LIT2 "op .Console/write DEO .Console/write DEO
     #00 .Tama/poop LDZ ;phex CALL #0a .Console/write DEO
     #0a .Console/write DEO
 RET 
@@ -848,6 +852,7 @@ RET
 RET
 
 @tama-update-stats-dead 
+    LIT2 "xx .Console/write DEO .Console/write DEO
     ( update tama state )
     TAMA_DEAD .Tama/state STZ
     ( we cancel every events )

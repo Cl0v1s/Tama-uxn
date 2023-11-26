@@ -596,10 +596,37 @@ RET
 @poop-init 
     ( get one byte only )
     ( -- x )
+    &before-loop
     ;prng CALL POP #39 AND
+    ( x -- x index )
+    .entities LDZ #0f AND 
+    &loop
+        DUP #00 EQU ,&after-loop JCN
+        (x index -- x index index-1 )
+        DUP .entities ADD #01 SUB 
+        ( x index index-1 -- x index xe )
+        LDZ
+        ( x index xe -- index xe x )
+        ROT
+        ( index xe x -- index xe x xe x )
+        DUP2 
+        #08 ADD GTH ,&after-check JCN
+        ( index xe x -- index xe x x xe )
+        DUP2 SWP
+        #08 ADD GTH ,&after-check JCN
+            POP2 POP
+            ,&before-loop JMP
+        &after-check ( x+8 < xe || x > xe+8 )
+        ( index xe x -- x index )
+        SWP POP SWP
+        #04 SUB
+        ,&loop JMP 
+    &after-loop
+    POP
 
     ( x -- x y )
     #28
+
     ;poop-update 
     SWP 
     .entities ;list-push CALL
@@ -694,7 +721,6 @@ RET
 RET
 
 @tama-update-poop 
-    #00 .Tama/poop STZ
     ( -- poop%32 )
     .Tama/poop LDZ #00 EQU
     ,&do JCN

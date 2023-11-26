@@ -739,7 +739,7 @@ RET
 
     ( first update run happens 2min after startup )
     ( TODO: #0002 instead of #0000 )
-    TIME #0002 ADD2
+    TIME #0000 ADD2
     SWP 
     ( store high byte )
     .events ;list-push CALL
@@ -790,8 +790,9 @@ RET
         #64 .Tama/poop STZ
 RET
 
+( Update happinness given context )
 ( Tama will loose 2% happiness each min for each poop on party )
-@tama-update-happy-with-poop-amount
+@tama-update-happy
     #00 
     .entities LDZ #0f AND 
     &loop 
@@ -812,29 +813,48 @@ RET
             #04 SUB 
             ,&loop JMP 
     &after-loop 
-    ( poop-counter index -- poop-counter )
-    POP
+    ( poop-counter index -- poop-counter poop-counter )
+    POP DUP 
     &loop-poop 
-        ( poop-counter -- poop-counter )
+        ( poop-counter poop-counter -- poop-counter poop-counter )
         DUP #00 EQU ,&after-loop-poop JCN 
-        ( poop-counter -- poop-counter 2%happy+1 )
+        ( poop-counter poop-counter -- poop-counter poop-counter 2%happy+1 )
         #0064 #0002 #00 .Tama/happy LDZ MUL2 SWP2 DIV2 NIP #01 ADD
         .Tama/happy LDZ SWP SUBC
         ,&dead JCN 
             ( if 2%happy >= 0 )
-            ( poop-counter happy -- poop-counter )
+            ( poop-counter poop-counter happy -- poop-counter )
             .Tama/happy STZ 
-            ( poop-counter -- poop-counter-1 )
+            ( poop-counter poop-counter -- poop-counter-1 )
             #01 SUB 
             ,&loop-poop JMP 
     &after-loop-poop
-    ( poop-counter -- not-dead )
-    POP #00
-    RET 
+    POP
+    ( poop-amount -- no-poop )
+    #00 EQU 
+    ( no-poop -- no-poop hungry>50 )
+    .Tama/hunger LDZ #32 GTH 
+    ( no-poop hungry>50 -- no-poop hungry>50 strain>50 )
+    .Tama/strain LDZ #32 GTH 
+    ( no-poop hungry>50 strain>50 -- increase-happy )
+    AND AND 
+    ,&increase-happy JCN 
+        ( if not increase-happy )
+        #00 
+        RET
+    &increase-happy 
+        ( if increase happy )
+        .Tama/happy LDZ #01 ADD
+        DUP #64 LTH ,&done JCN 
+            POP #64
+        &done 
+        .Tama/happy STZ
+        #00 
+        RET 
     &dead 
         ( if happy <= 0 )
-        ( poop-counter happy -- dead )
-        POP2 
+        ( poop-counter poop-counter happy -- dead )
+        POP2 POP
         #00 .Tama/happy STZ
         #01
 RET 
@@ -903,7 +923,7 @@ RET
     POP
 
     ( -- dead )
-    ;tama-update-happy-with-poop-amount CALL 
+    ;tama-update-happy CALL 
     ,&dead JCN 
         ( if not dead )
         ,&after-dead JMP 

@@ -138,6 +138,14 @@ JMP2r
 		#0f AND DUP #09 GTH #27 MUL ADD [ LIT "0 ] ADD #18 DEO
 		JMP2r
 
+@print-stats 
+    #00 .Tama/happy LDZ ;phex CALL #0a .Console/write DEO
+    #00 .Tama/hunger LDZ ;phex CALL #0a .Console/write DEO
+    #00 .Tama/strain LDZ ;phex CALL #0a .Console/write DEO
+    #00 .Tama/poop LDZ ;phex CALL #0a .Console/write DEO
+    #0a .Console/write DEO
+RET 
+
 ( create a new list, a list can only contains up to 16 items )
 ( list-size list-addr -- )
 @list-create 
@@ -742,6 +750,7 @@ RET
 ( update poop counter and make poop spawn )
 ( amount -- )
 @tama-update-poop 
+    #00 .Tama/poop STZ
     ( amount -- poop-amount carry )
     .Tama/poop LDZ SWP SUBC 
     ,&do JCN
@@ -756,6 +765,57 @@ RET
         ;poop-init CALL
         #64 .Tama/poop STZ
 RET
+
+( Tama will loose 2% happiness each min for each poop on party )
+@tama-update-happy-with-poop-amount
+    #00 
+    .entities LDZ #0f AND 
+    &loop 
+        ( poop-counter index -- poop-counter index )
+        DUP #00 EQU ,&after-loop JCN 
+        ( poop-counter index -- poop-counter index [callback]* )
+        DUP .entities ADD #03 SUB LDZ2
+        ;poop-update EQU2
+        ,&inc-counter JCN 
+            ( if callback != poop-update )
+            ( poop-counter index -- poop-counter index )
+            ,&after-check JMP 
+        &inc-counter 
+            ( if callback == poop-update )
+            SWP INC SWP 
+        &after-check
+            ( poop-counter index -- poop-counter index-4 )
+            #04 SUB 
+            ,&loop JMP 
+    &after-loop 
+    ( poop-counter index -- poop-counter )
+    POP
+    &loop-poop 
+        ( poop-counter -- poop-counter )
+        DUP #00 EQU ,&after-loop-poop JCN 
+        ( poop-counter -- poop-counter 2%happy )
+        #64 #02 .Tama/happy LDZ MUL DIV 
+        DUP ,&not-dead JCN 
+            ( if 2%happy == 0, happy is almost 0, Tama is dead )
+            ( poop-counter 2%happy -- poop-counter 2%happy )
+            #00 .Tama/happy STZ
+            ,&dead JMP
+        &not-dead 
+            ( if 2%happy >= 0 )
+            ( poop-counter 2%happy -- poop-counter )
+            .Tama/happy LDZ SWP SUB .Tama/happy STZ 
+            ( poop-counter -- poop-counter-1 )
+            #01 SUB 
+            ,&loop-poop JMP 
+    &after-loop-poop
+    ( poop-counter -- not-dead )
+    POP #00
+    RET 
+    &dead 
+        ( if happy <= 0 )
+        ( poop-counter 2%happy -- dead )
+        POP2 #01
+RET 
 
 ( Update tama stats when egg )
 @tama-update-stats-egg
@@ -819,6 +879,17 @@ RET
     &after-switch
     POP
 
+    ;print-stats CALL
+
+    ( -- dead )
+    ;tama-update-happy-with-poop-amount CALL 
+    ,&dead JCN 
+        ( if not dead )
+        ,&after-dead JMP 
+    &dead 
+        ( if dead )
+        ;tama-update-stats-dead CALL
+    &after-dead
 
     ( reschedule in 1 min )
     TIME #0001 ADD2

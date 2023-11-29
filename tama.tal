@@ -82,6 +82,7 @@
         &happy $1
         &hunger $1
         &strain $1
+        &sleeping $1
         &poop $1
     ( timing events 3 max, timestamp* callback* )
     @events $1 $c
@@ -842,6 +843,47 @@ RET
         #64 .Tama/poop STZ
 RET
 
+( check if tama is sleeping and manage strain decrease with time )
+( Tama/sleeping: bit 7 -> sleeping, other bits -> decimal counter for strain increase )
+@tama-update-sleep 
+    ( -- sleeping sleeping )
+    .Tama/sleeping LDZ DUP
+    #07 SFT ,&continue JCN
+        ( since sleeping & 0X80 is false, we are not sleeping )
+        ( sleeping -- )
+        POP
+        #00 .Tama/sleeping STZ
+        RET
+    &continue 
+        ( if sleeping & 0x80, we are sleeping )
+        ( sleeping -- sleeping-counter )
+        #7f AND
+        #64 SWP #14 ;add-max CALL
+        ( sleeping-counter+20 -- sleeping-counter+20 sleeping-counter+20 )
+        DUP
+        #64 EQU ,&step JCN
+            ( sleeping-counter+20 < 100 )
+            ( sleeping-counter+20 -- )
+            #80 ORA .Tama/sleeping STZ 
+            RET
+        &step
+            ( sleeping-counter+20 >= 100 )
+            ( sleeping-counter+20 -- )
+            POP
+            #80 .Tama/sleeping STZ
+            ( -- strain strain )
+            #64 .Tama/strain LDZ #01 ;add-max CALL DUP
+            ( strain strain -- strain )
+            .Tama/strain STZ
+            ( strain -- )
+            #64 EQU ,&wake JCN 
+                ( strain < 100 ) 
+                RET
+            &wake
+                ( strain >= 100, wake up )
+                #00 .Tama/sleeping STZ
+RET 
+
 ( Update happinness given context )
 ( Tama will loose 2% happiness each min for each poop on party )
 @tama-update-happy
@@ -973,6 +1015,8 @@ RET
         ,&after-switch JMP 
     &after-switch
     POP
+
+    ;tama-update-sleep CALL
 
     ( -- dead )
     ;tama-update-happy CALL 

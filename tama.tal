@@ -259,7 +259,11 @@ RET
     ( init tama )
     ;tama-init CALL
     ( we set main scene as first scene )
-    ;main-scene-init CALL
+    #80 .Tama/sleeping LDZ AND #80 EQU ,&is-sleeping JCN
+        ;main-scene-init CALL
+        RET
+    &is-sleeping 
+        ;sleep-scene-init CALL
 RET
 
 ( check for pending events )
@@ -549,25 +553,22 @@ RET
     ;sleep-scene-input-left .scene/input-left STZ2
     ;sleep-scene-input-right .scene/input-right STZ2
     ;sleep-scene-update .scene/update STZ2
+    ( make tama sleep )
+    #80 .Tama/sleeping STZ 
     ( make screen black )
     #01 ;screen-fill CALL
     ( start sleeping animation )
     ;zz/animation .Tama/frame STZ2
-    ( set wake up timer )
-    TIME #0001 ADD2
-    SWP 
-    .events ;list-push CALL
-    .events ;list-push CALL
-    
-    ;main-scene-init 
-    SWP 
-    .events ;list-push CALL
-    .events ;list-push CALL
 RET 
 
 @sleep-scene-update 
-    ;sleep-scene-draw CALL
-    ;check-for-events CALL
+    .Tama/sleeping LDZ #80 AND #80 EQU ,&is-sleeping JCN 
+        ( if we are not sleeping we exit that scene )
+        ;main-scene-init CALL 
+        RET 
+    &is-sleeping
+        ;sleep-scene-draw CALL
+        ;check-for-events CALL
 RET 
 
 @sleep-scene-input-a 
@@ -872,7 +873,12 @@ RET
             POP
             #80 .Tama/sleeping STZ
             ( -- strain strain )
-            #64 .Tama/strain LDZ #01 ;add-max CALL DUP
+            #64 .Tama/strain LDZ 
+            LIT 
+( we can directly edit the value to change strain recover speed )
+@val-strain-recover
+            01 
+            ;add-max CALL DUP
             ( strain strain -- strain )
             .Tama/strain STZ
             ( strain -- )
@@ -956,9 +962,13 @@ RET
 ( Update tama stats when egg )
 @tama-update-stats-egg
     TAMA_BABY .Tama/state STZ
-
+    ( when hatching tama will need to take a nap, to make things fast we first set )
+    ( strain recover at a greater value, it will be updated on baby update stats )
+    #32 ;val-strain-recover STA
     ( when hatching, hunger is set to 25 )
     #19 .Tama/hunger STZ
+    ( when hatching, strain is set to 63 )
+    #63 .Tama/strain STZ
 RET 
 
 ( Update tama stats when baby )
@@ -966,8 +976,16 @@ RET
     ( we loose 3 hunger each min, to it's 30 in ten minutes )
     ( -- hunger<0 )
     #03 .Tama/hunger ;tama-update-stat CALL
-    ( hunger<0 -- hunger<0 strain<0 )
-    #0a .Tama/strain ;tama-update-stat CALL
+    #80 .Tama/sleeping LDZ AND #80 EQU ,&is-sleeping JCN 
+        ( if not asleep we manage strain )
+        ( hunger<0 -- hunger<0 strain<0 )
+        #0a .Tama/strain ;tama-update-stat CALL
+        ,&after-is-sleeping JMP 
+    &is-sleeping 
+        ( if sleeping we just say that strain>=0 )
+        ( hunger<0 -- hunger<0 strain<0 )
+        #00
+    &after-is-sleeping 
     ( hunger<0 strain<0 -- unhealthy )
     ORA
     ( we loose 5 poop each min )

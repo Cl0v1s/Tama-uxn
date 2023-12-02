@@ -30,10 +30,15 @@
 }
 
 ( sub2 with carry )
-( a b -- a-b c )
+( a* b* -- a-b* c )
 %SUBC2 {
-    SWP2 DUP2 ROT2 SUB2
-    SWP2 GTHk2 SWP2 POP2
+    SWP2
+    DUP2
+    ROT2 
+    SUB2
+    SWP2 
+    GTHk2
+    NIP NIP
 }
 
 %TIME {
@@ -79,11 +84,11 @@
         &x $2
         &y $2
         &state $1
-        &happy $1
-        &hunger $1
-        &strain $1
+        &happy $2
+        &hunger $2
+        &strain $2
+        &poop $2
         &sleeping $1
-        &poop $1
     ( timing events 3 max, timestamp* callback* )
     @events $1 $c
     ( objects on scene 3 max, update_callback* data* )
@@ -156,13 +161,13 @@ JMP2r
 
 @print-stats 
     LIT2 "ah .Console/write DEO .Console/write DEO
-    #00 .Tama/happy LDZ ;phex CALL #0a .Console/write DEO
+    .Tama/happy LDZ2 ;phex CALL #0a .Console/write DEO
     LIT2 "uh .Console/write DEO .Console/write DEO
-    #00 .Tama/hunger LDZ ;phex CALL #0a .Console/write DEO
+    .Tama/hunger LDZ2 ;phex CALL #0a .Console/write DEO
     LIT2 "ts .Console/write DEO .Console/write DEO
-    #00 .Tama/strain LDZ ;phex CALL #0a .Console/write DEO
+    .Tama/strain LDZ2 ;phex CALL #0a .Console/write DEO
     LIT2 "op .Console/write DEO .Console/write DEO
-    #00 .Tama/poop LDZ ;phex CALL #0a .Console/write DEO
+    .Tama/poop LDZ2 ;phex CALL #0a .Console/write DEO
     #0a .Console/write DEO
 RET 
 
@@ -553,8 +558,6 @@ RET
     ;sleep-scene-input-left .scene/input-left STZ2
     ;sleep-scene-input-right .scene/input-right STZ2
     ;sleep-scene-update .scene/update STZ2
-    ( make tama sleep )
-    #80 .Tama/sleeping STZ 
     ( make screen black )
     #01 ;screen-fill CALL
     ( start sleeping animation )
@@ -627,8 +630,6 @@ RET
         RET
     &quit
     ;main-scene-init CALL
-    #64 #19 .Tama/hunger LDZ ;add-max CALL 
-    .Tama/hunger STZ
 RET 
 
 @eating-scene-input-a
@@ -786,10 +787,10 @@ RET
     TAMA_EGG .Tama/state STZ
 
     ( set stats at 100 )
-    #64 .Tama/happy STZ
-    #64 .Tama/hunger STZ
-    #64 .Tama/strain STZ
-    #64 .Tama/poop STZ
+    #6400 .Tama/happy STZ2
+    #6400 .Tama/hunger STZ2
+    #6400 .Tama/strain STZ2
+    #6400 .Tama/poop STZ2
 
     ( first update run happens 2min after startup )
     ( TODO: #0002 instead of #0000 )
@@ -808,21 +809,22 @@ RET
 RET
 
 ( Update a stat at given adress, by decreasing by given amount. Caped at #00 and return #01 if caped )
-( amount stat-addr -- caped )
+( amount* stat-addr -- caped )
 @tama-update-stat 
-    ( amount stat-addr -- amount stat-addr stat-value )
-    DUP LDZ 
-    ( amount stat-addr stat-value -- stat-addr stat-value-amount carry )
-    ROT SUBC
+    #00 SWP
+    ( amount* stat-addr* -- amount* stat-addr* stat-value* )
+    DUP LDZ2
+    ( amount* stat-addr* stat-value* -- stat-addr* stat-value-amount* carry )
+    ROT2
+    SUBC2
     ,&caped JCN
-        SWP STZ 
+        SWP2 NIP STZ2
         #00 
     RET
     &caped 
-        POP 
-        #00
-        SWP
-        STZ 
+        ( stat-addr* stat-value-amount* -- )
+        POP2 #00 SWP
+        STZ2
         #01
 RET 
 
@@ -841,7 +843,7 @@ RET
         ( poop-amount -- )
         POP
         ;poop-init CALL
-        #64 .Tama/poop STZ
+        #6400 .Tama/poop STZ2
 RET
 
 ( check if tama is sleeping and manage strain decrease with time )
@@ -955,7 +957,7 @@ RET
         ( if happy <= 0 )
         ( poop-counter poop-counter happy -- dead )
         POP2 POP
-        #00 .Tama/happy STZ
+        #0000 .Tama/happy STZ2
         #01
 RET 
 
@@ -966,20 +968,21 @@ RET
     ( strain recover at a greater value, it will be updated on baby update stats )
     #32 ;val-strain-recover STA
     ( when hatching, hunger is set to 25 )
-    #19 .Tama/hunger STZ
-    ( when hatching, strain is set to 63 )
-    #63 .Tama/strain STZ
+    #1900 .Tama/hunger STZ2
+    ( when hatching, strain is set to 4 so it will need to sleep in 10min )
+    #0400 .Tama/strain STZ2
 RET 
 
 ( Update tama stats when baby )
 @tama-update-stats-baby 
     ( we loose 3 hunger each min, to it's 30 in ten minutes )
     ( -- hunger<0 )
-    #03 .Tama/hunger ;tama-update-stat CALL
+    #0300 .Tama/hunger ;tama-update-stat CALL
     #80 .Tama/sleeping LDZ AND #80 EQU ,&is-sleeping JCN 
         ( if not asleep we manage strain )
         ( hunger<0 -- hunger<0 strain<0 )
-        #0a .Tama/strain ;tama-update-stat CALL
+        ( we loose 0.33 strain each minute )
+        #0021 .Tama/strain ;tama-update-stat CALL
         ,&after-is-sleeping JMP 
     &is-sleeping 
         ( if sleeping we just say that strain>=0 )
@@ -996,7 +999,7 @@ RET
     &unhealthy 
         ( if hunger < 0 or strain <0 )
         ( -- happy<0 )
-        #05 .Tama/happy ;tama-update-stat CALL
+        #0500 .Tama/happy ;tama-update-stat CALL
         ,&dead JCN 
             ( if happy >= 0 )
             RET 
@@ -1035,6 +1038,10 @@ RET
     POP
 
     ;tama-update-sleep CALL
+    .Tama/strain LDZ #00 GTH ,&after-fall-asleep JCN 
+        ( if strain == 0, we fall asleep )
+        ;tama-sleep CALL
+    &after-fall-asleep
 
     ( -- dead )
     ;tama-update-happy CALL 
@@ -1072,11 +1079,16 @@ RET
 ( make tama eat )
 @tama-feed
     ;eating-scene-init CALL
+    ( increase hunger )
+    #64 #19 .Tama/hunger LDZ ;add-max CALL 
+    .Tama/hunger STZ
 RET 
 
 ( make tama sleep )
 @tama-sleep
     ;sleep-scene-init CALL
+    ( make tama sleep )
+    #80 .Tama/sleeping STZ 
 RET
 
 ( make tama clean )

@@ -28,6 +28,8 @@ Nothing to do here, just wait.
 
 ### Baby
 
+[Graph](https://www.desmos.com/calculator/bj12kobqi6)
+
 Will start with hunger at 25 and strain at 19.
 
 **happy**: if hungry or tired: -5x + 100

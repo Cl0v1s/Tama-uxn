@@ -52,5 +52,5 @@ This extension is released under the CC0 1.0 Universal (CC0 1.0) Public Domain D
 
 ## Acknowledgments
 
-Special thanks to the UXN community and the Visual Studio Code extension development community for their invaluable support and contributions. This project is built upon the UXN assembler written in JavaScript by rafapaezbas and the Varvara emulator in JavaScript by Rek, which played a crucial role in making this extension possible.
+Special thanks to the UXN community for its invaluable support and contributions.
 

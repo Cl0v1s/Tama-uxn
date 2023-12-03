@@ -26,7 +26,9 @@ The creature will also poop and need cleaning sometimes.
 
 Nothing to do here, just wait. 
 
-### Baby 
+### Baby
+
+Will start with hunger at 25 and strain at 19.
 
 **happy**: if hungry or tired: -5x + 100
 

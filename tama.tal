@@ -102,9 +102,7 @@
     #72af .System/g DEO2
     #b57c .System/b DEO2
 
-
     ;prng-init CALL
-
     ;load-game CALL
 
     ;on-screen .Screen/vector DEO2
@@ -264,7 +262,7 @@ RET
     ( init tama )
     ;tama-init CALL
     ( we set main scene as first scene )
-    #80 .Tama/sleeping LDZ AND #80 EQU ,&is-sleeping JCN
+    .Tama/sleeping LDZ ,&is-sleeping JCN
         ;main-scene-init CALL
         RET
     &is-sleeping 
@@ -565,7 +563,7 @@ RET
 RET 
 
 @sleep-scene-update 
-    .Tama/sleeping LDZ #80 AND #80 EQU ,&is-sleeping JCN 
+    .Tama/sleeping LDZ ,&is-sleeping JCN 
         ( if we are not sleeping we exit that scene )
         ;main-scene-init CALL 
         RET 
@@ -778,6 +776,35 @@ RET
     DRAW_TILE POP
 RET 
 
+@poops-clean 
+    ( -- length )
+    .entities LDZ #0f AND 
+    ( length -- index )
+    .entities ADD #03 SUB
+    &loop 
+        ( index -- index index )
+        DUP 
+        ( index index -- index )
+        LDZ2 ;poop-update EQU2 #01 EOR ,&after-comp JCN
+            ( if [index]* == poop-update )
+            ( index -- index index )
+            DUP 
+            ( index index -- index )
+            .entities SUB #04 DIV
+            ;poop-delete CALL
+        &after-comp
+        ( index -- index-4 )
+        #04 SUB 
+        ( index -- index )
+        DUP .entities INC LTH ,&after-loop JCN
+        ,&loop JMP
+    &after-loop 
+    ( index -- )
+    POP
+RET 
+
+( --------------------------------------------------- )
+
 ( TAMA methods )
 ( init the tamagotchi )
 @tama-init 
@@ -845,52 +872,6 @@ RET
         ;poop-init CALL
         #6400 .Tama/poop STZ2
 RET
-
-( check if tama is sleeping and manage strain decrease with time )
-( Tama/sleeping: bit 7 -> sleeping, other bits -> decimal counter for strain increase )
-@tama-update-sleep 
-    ( -- sleeping sleeping )
-    .Tama/sleeping LDZ DUP
-    #07 SFT ,&continue JCN
-        ( since sleeping & 0X80 is false, we are not sleeping )
-        ( sleeping -- )
-        POP
-        #00 .Tama/sleeping STZ
-        RET
-    &continue 
-        ( if sleeping & 0x80, we are sleeping )
-        ( sleeping -- sleeping-counter )
-        #7f AND
-        #64 SWP #14 ;add-max CALL
-        ( sleeping-counter+20 -- sleeping-counter+20 sleeping-counter+20 )
-        DUP
-        #64 EQU ,&step JCN
-            ( sleeping-counter+20 < 100 )
-            ( sleeping-counter+20 -- )
-            #80 ORA .Tama/sleeping STZ 
-            RET
-        &step
-            ( sleeping-counter+20 >= 100 )
-            ( sleeping-counter+20 -- )
-            POP
-            #80 .Tama/sleeping STZ
-            ( -- strain strain )
-            #64 .Tama/strain LDZ 
-            LIT 
-( we can directly edit the value to change strain recover speed )
-@val-strain-recover
-            01 
-            ;add-max CALL DUP
-            ( strain strain -- strain )
-            .Tama/strain STZ
-            ( strain -- )
-            #64 EQU ,&wake JCN 
-                ( strain < 100 ) 
-                RET
-            &wake
-                ( strain >= 100, wake up )
-                #00 .Tama/sleeping STZ
-RET 
 
 ( Update happinness given context )
 ( Tama will loose 2% happiness each min for each poop on party )
@@ -966,7 +947,7 @@ RET
     TAMA_BABY .Tama/state STZ
     ( when hatching tama will need to take a nap, to make things fast we first set )
     ( strain recover at a greater value, it will be updated on baby update stats )
-    #32 ;val-strain-recover STA
+    #0a00 ;tama-update-stats/strain-recover STA2
     ( when hatching, hunger is set to 25 )
     #1900 .Tama/hunger STZ2
     ( when hatching, strain is set to 19 so it will need to sleep in 10min )
@@ -977,10 +958,16 @@ RET
 ( hunger = -75/30x+100 )
 ( strain = -75/40x+100 )
 @tama-update-stats-baby 
+    ( manage strain recover speed after first nap )
+    .Tama/strain LDZ #64 LTH ,&after-update-strain-speed JCN 
+        ( if strain >= 100 )
+        #0033 ;tama-update-stats/strain-recover STA2
+    &after-update-strain-speed 
+
     ( -- hunger<0 )
     ( hunger = 25 at 30min )
     #027f .Tama/hunger ;tama-update-stat CALL
-    #80 .Tama/sleeping LDZ AND #80 EQU ,&is-sleeping JCN 
+    .Tama/sleeping LDZ ,&is-sleeping JCN 
         ( if not asleep we manage strain )
         ( hunger<0 -- hunger<0 strain<0 )
         ( strain = 25 at 40min )
@@ -993,6 +980,7 @@ RET
     &after-is-sleeping 
     ( hunger<0 strain<0 -- unhealthy )
     ORA
+    ( a poop per 20min )
     ( we loose 5 poop each min )
     #05 ;tama-update-poop CALL
     ,&unhealthy JCN
@@ -1039,10 +1027,36 @@ RET
     &after-switch
     POP
 
-    ;tama-update-sleep CALL
+    .Tama/sleeping LDZ #00 EQU ,&after-manage-sleep  JCN 
+        ( -- 100 )
+        #64
+        ( if we are sleeping )
+        .Tama/strain LDZ2
+        LIT2
+        &strain-recover 0033 ( by default strain recover = 100/480x (0.20/min) so it's 100 after 8 hours )
+        ADD2 
+        ( 100 strain+0.2* -- 100 strain+0.2 )
+        ( -- strain+0.2/100 )
+        STH 
+        ( 100 strain+0.2 -- strain+0.2 )
+        ( strain+0.2/100 -- )
+        #00 ;add-max CALL ( we call add max so we cap at 100 )
+        ( strain+0.2 -- strain+0.2 strain+0.2/100 )
+        ( strain+0.2/100 -- )
+        STHr 
+        DUP2
+        .Tama/strain STZ2
+        POP 
+        #64 LTH ,&after-manage-sleep JCN
+            ( if strain >= 64 )
+            #6400 .Tama/strain STZ2 
+            #00 .Tama/sleeping STZ ( we wake up )
+    &after-manage-sleep 
     .Tama/strain LDZ #00 GTH ,&after-fall-asleep JCN 
         ( if strain == 0, we fall asleep )
         ;tama-sleep CALL
+        ( and we loose 10 happy because we need to sleep ! )
+        #0a00 .Tama/happy ;tama-update-stat CALL POP
     &after-fall-asleep
 
     ( -- dead )
@@ -1082,19 +1096,21 @@ RET
 @tama-feed
     ;eating-scene-init CALL
     ( increase hunger )
-    #64 #19 .Tama/hunger LDZ ;add-max CALL 
-    .Tama/hunger STZ
+    #64 #19 .Tama/hunger LDZ ;add-max CALL .Tama/hunger STZ
+    ( we loose 10 poop when we eat )
+    #0a ;tama-update-poop CALL
 RET 
 
 ( make tama sleep )
 @tama-sleep
     ;sleep-scene-init CALL
     ( make tama sleep )
-    #80 .Tama/sleeping STZ 
+    #01 .Tama/sleeping STZ 
 RET
 
 ( make tama clean )
 @tama-wash 
+    ;poops-clean CALL
     ;clean-scene-init CALL
 RET 
 

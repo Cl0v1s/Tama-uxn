@@ -969,20 +969,22 @@ RET
     #32 ;val-strain-recover STA
     ( when hatching, hunger is set to 25 )
     #1900 .Tama/hunger STZ2
-    ( when hatching, strain is set to 4 so it will need to sleep in 10min )
-    #0400 .Tama/strain STZ2
+    ( when hatching, strain is set to 19 so it will need to sleep in 10min )
+    #1300 .Tama/strain STZ2
 RET 
 
 ( Update tama stats when baby )
+( hunger = -75/30x+100 )
+( strain = -75/40x+100 )
 @tama-update-stats-baby 
-    ( we loose 3 hunger each min, to it's 30 in ten minutes )
     ( -- hunger<0 )
-    #0300 .Tama/hunger ;tama-update-stat CALL
+    ( hunger = 25 at 30min )
+    #027f .Tama/hunger ;tama-update-stat CALL
     #80 .Tama/sleeping LDZ AND #80 EQU ,&is-sleeping JCN 
         ( if not asleep we manage strain )
         ( hunger<0 -- hunger<0 strain<0 )
-        ( we loose 0.33 strain each minute )
-        #0021 .Tama/strain ;tama-update-stat CALL
+        ( strain = 25 at 40min )
+        #01d8 .Tama/strain ;tama-update-stat CALL
         ,&after-is-sleeping JMP 
     &is-sleeping 
         ( if sleeping we just say that strain>=0 )

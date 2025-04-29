@@ -5,8 +5,6 @@
 #define UI 0
 #define GROUND 64-16
 
-Pet pet;
-
 unsigned char counter = 0;
 void on_screen() {
     counter += 1;

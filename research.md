@@ -24,3 +24,12 @@ A binary version of chibicc is present in this project.
 
 To convert modern images (such as png) to .chr, we use 
 https://www.make.vg/brewtool/chr/index.html
+
+
+## TODO
+
+- [ ] Hatching
+- [ ] Random placement
+- [ ] Death
+- [ ] Stat UI
+- [ ] Stages other than baby

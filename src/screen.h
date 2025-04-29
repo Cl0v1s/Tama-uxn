@@ -1,0 +1,37 @@
+#ifndef SCREEN_H
+#define SCREEN_H
+
+#include "lib/varvara.h"
+
+typedef struct {
+    unsigned char* addr;
+    int length; // number of frames
+    int frame; // frame counter 
+    int counter; // sub-frame counter
+    int speed; // animation speed (the higher the slowest)
+} AnimatedSprite;
+
+void clear_screen() {
+    set_screen_xy(0, 0);
+    draw_pixel(0b10000010);
+}
+
+void paint_sprite(int x, int y, unsigned char bitcolor, unsigned char* addr, int frame) {
+    set_screen_xy(x, y);
+    set_screen_addr(addr + frame * 16 * 16);
+    set_screen_auto(0b00110110);
+    draw_sprite(0x80 | (bitcolor & 0x0f));
+    draw_sprite(0x80 | (bitcolor & 0x0f));
+    draw_sprite(0x80 | (bitcolor & 0x0f));
+    draw_sprite(0x80 | (bitcolor & 0x0f));
+}
+
+void draw_animation(AnimatedSprite* animation, int x, int y, unsigned char bitcolor) {
+    paint_sprite(x, y, bitcolor, animation->addr, animation->frame);
+    animation->counter = (animation->counter + 1) % animation->speed + 1;
+    animation->frame = (animation->frame + animation->counter / animation->speed) % animation->length;
+}
+
+
+
+#endif 

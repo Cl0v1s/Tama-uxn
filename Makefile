@@ -1,11 +1,26 @@
 
-SOURCES := src/*
-DATA := data/*
+DATA := ./data
+
+DATA_FILES := $(wildcard $(DATA)/*)
+
+FILES := $(DATA_FILES:.chr=.chr.h) 
+
+.PHONY: tama.tal tmp.c
 
 ALL: tama.rom
 
-tmp.c: $(SOURCES)
-	gcc -I. -P -E $? -o $@
+clean:
+	rm -rf ./data/*.h
+	rm -f ./*.c
+	rm -f tama.rom
+	rm -f tama.rom.sym
+	rm -f tama.tal
+
+%.chr.h: %.chr
+	xxd -i $< $@
+
+tmp.c: $(FILES) 
+	gcc -I. -P -E src/main.c -o $@
 
 tama.tal: tmp.c
 	./tools/chibicc $< > $@

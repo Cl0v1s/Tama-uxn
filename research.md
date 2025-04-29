@@ -1,3 +1,16 @@
+# Learning 
+
+We use this tutorial to be familiar with uxn 
+https://compudanzas.net/uxn_tutorial.html
+
+Colors from set_palettes have to be red in columns
+col1 -> color 1
+col2 -> color 2
+col3 -> color 3
+col4 -> color 4
+
+![Possible color values](image.png)
+
 # Tooling 
 
 ## Language 

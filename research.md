@@ -28,7 +28,7 @@ https://www.make.vg/brewtool/chr/index.html
 
 ## TODO
 
-- [ ] Hatching
+- [x] Hatching
 - [ ] Random placement
 - [ ] Death
 - [ ] Stat UI

@@ -1,7 +1,7 @@
 
 DATA := ./data
 
-DATA_FILES := $(wildcard $(DATA)/*)
+DATA_FILES := $(wildcard $(DATA)/*/*)
 
 FILES := $(DATA_FILES:.chr=.chr.h) 
 

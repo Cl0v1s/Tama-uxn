@@ -2,6 +2,7 @@
     "files.associations": {
         "egg.chr.h": "c",
         "varvara.h": "c",
-        "chrono": "cpp"
+        "chrono": "cpp",
+        "pet.h": "c"
     }
 }

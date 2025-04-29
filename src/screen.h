@@ -26,6 +26,14 @@ void paint_sprite(int x, int y, unsigned char bitcolor, unsigned char* addr, int
     draw_sprite(0x80 | (bitcolor & 0x0f));
 }
 
+void init_animation(AnimatedSprite* animation, unsigned char* addr, int length, int speed) {
+    animation->addr = addr;
+    animation->length = length;
+    animation->speed = speed;
+    animation->frame = 0;
+    animation->counter = 0;
+}
+
 void draw_animation(AnimatedSprite* animation, int x, int y, unsigned char bitcolor) {
     paint_sprite(x, y, bitcolor, animation->addr, animation->frame);
     animation->counter = (animation->counter + 1) % animation->speed + 1;

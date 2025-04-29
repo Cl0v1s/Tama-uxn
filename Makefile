@@ -23,7 +23,7 @@ tmp.c: $(FILES)
 	gcc -I. -P -E src/main.c -o $@
 
 tama.tal: tmp.c
-	./tools/chibicc $< > $@
+	./tools/chibicc -O1 $< > $@
 
 tama.rom: tama.tal
 	./tools/uxnasm $< $@

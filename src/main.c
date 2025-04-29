@@ -1,15 +1,21 @@
 #include "lib/varvara.h"
-#include "data/egg.chr.h"
 #include "./screen.h"
+#include "pet.h"
 
 #define UI 0
 #define GROUND 64-16
 
-AnimatedSprite egg;
+Pet pet;
 
+unsigned char counter = 0;
 void on_screen() {
+    counter += 1;
+    counter = counter % 60;
+    if(counter == 0) {
+        update_pet(&pet);
+    }
     clear_screen();
-    draw_animation(&egg, 96 /2 - 32 / 2, GROUND - 32, 0x0);
+    draw_animation(&pet.form, 96 /2 - 32 / 2, GROUND - 32, 0x0);
 }
 
 void main() {
@@ -19,9 +25,6 @@ void main() {
         0x0fb2
     );
     set_screen_size(96, 64);
-    egg.addr = data_egg_chr;
-    egg.frame = 0;
-    egg.length = 2;
-    egg.speed = 50;
-    // sprite(0, 0, 0, data_egg_chr, 1);
+
+    init_pet(&pet);
 }

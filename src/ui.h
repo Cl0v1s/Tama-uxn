@@ -18,8 +18,6 @@
 
 typedef struct {
     int index;
-    int cooldown;
-
     // int is in fact a function pointer 
     // but no diff in uxn
     int callbacks[UI_LENGTH];
@@ -29,7 +27,6 @@ UI ui;
 
 void init_ui(UI* ui, void* on_stats, void* on_eat, void* on_light) {
     ui->index = UI_LENGTH / 2;
-    ui->cooldown = 0;
 
     ui->callbacks[0] = on_stats;
     ui->callbacks[1] = on_eat;
@@ -37,23 +34,16 @@ void init_ui(UI* ui, void* on_stats, void* on_eat, void* on_light) {
 }
 
 void update_ui(UI* ui) {
-    if(ui->cooldown <= 0) {
-        if(controller_button() == ButtonLeft) {
-            ui->index = (ui->index - 1);
-            if(ui->index < 0) {
-                ui->index = UI_LENGTH - 1;
-            }
-            ui->cooldown = UI_COOLDOWN;
+    if(controller_button() == ButtonLeft) {
+        ui->index = (ui->index - 1);
+        if(ui->index < 0) {
+            ui->index = UI_LENGTH - 1;
         }
-        else if(controller_button() == ButtonRight) {
-            ui->index = (ui->index + 1) % UI_LENGTH;
-            ui->cooldown = UI_COOLDOWN;
-        } else if(controller_button() == ButtonA) {
-            callback(ui->callbacks[ui->index]);
-            ui->cooldown = UI_COOLDOWN;
-        }
-    } else {
-        ui->cooldown -= 1;
+    }
+    else if(controller_button() == ButtonRight) {
+        ui->index = (ui->index + 1) % UI_LENGTH;
+    } else if(controller_button() == ButtonA) {
+        callback(ui->callbacks[ui->index]);
     }
 }
 

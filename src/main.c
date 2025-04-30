@@ -13,10 +13,13 @@ void on_screen() {
     if(counter == 0) {
         update_pet(&pet);
     }
-    update_ui(&ui);
     clear_screen();
     draw_animation(&pet.form, pet.x, pet.y, 0x0);
     draw_ui(&ui);
+}
+
+void on_controller() {
+    update_ui(&ui);
 }
 
 

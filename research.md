@@ -31,5 +31,6 @@ https://www.make.vg/brewtool/chr/index.html
 - [x] Hatching
 - [x] Random placement
 - [ ] Death
+- [x] Base UI
 - [ ] Stat UI
 - [ ] Stages other than baby

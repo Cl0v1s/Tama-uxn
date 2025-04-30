@@ -4,6 +4,7 @@
 #include "utils.h"
 #include "ui.h"
 
+
 unsigned char counter = 0;
 void on_screen() {
     random_counter = (random_counter + datetime_second()) % 255;
@@ -14,7 +15,6 @@ void on_screen() {
         update_pet(&pet);
     }
     clear_screen();
-    draw_animation(&pet.form, pet.x, pet.y, 0x0);
     draw_ui(&ui);
 }
 
@@ -22,27 +22,38 @@ void on_controller() {
     update_ui(&ui);
 }
 
-
 /**
  * UI callbacks
  */
+void back_to_main() {
+    set_mode_ui(&ui, UI_MODE_MAIN);
+}
+
+
 void on_stats() {
-    console_write('S');
+    if(ui.mode == UI_MODE_MAIN) {
+        set_mode_ui(&ui, UI_MODE_STATS);
+    } else {
+        back_to_main();
+    }
 }
 
 void on_eat() {
+    back_to_main();
     eat_pet(&pet);
 }
 
-void on_light() {
 
+void on_light() {
+    back_to_main();
+    toggle_day_ui(&ui);
 }
 
 void main() {
     set_palette(
-        0x0f7f, 
-        0x0fd6, 
-        0x0fb2
+        DAY_1, 
+        DAY_2, 
+        DAY_3
     );
     set_screen_size(96, 64);
 

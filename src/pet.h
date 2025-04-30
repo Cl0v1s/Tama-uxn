@@ -39,7 +39,7 @@ Pet pet;
  * CALLBACK
  */
 void set_idle_pet() {
-    animate_pet(&pet, data_baby_idle_chr, 2, 50, 0);
+    animate_pet(&pet, data_baby_idle_chr, 2, 50, 0, 0);
     pet.can_tp = TRUE;
 }
 
@@ -49,9 +49,9 @@ void set_idle_pet() {
 void tp_pet(Pet *pet)
 {
     pet->x = random(0, screen_width() - 32);
-    pet->y = GROUND - 32 - random(0, 10);
+    pet->y = GROUND - 32 - random(0, 3);
     // TODO: maybe try to play an animation
-    animate_pet(pet, data_baby_jump_chr, 3, 30, &set_idle_pet);
+    animate_pet(pet, data_baby_jump_chr, 3, 30, 0, &set_idle_pet);
 }
 
 /**
@@ -62,14 +62,14 @@ void set_can_tp_pet()
     pet.can_tp = TRUE;
 }
 
-void animate_pet(Pet *pet, unsigned char *addr, int length, int speed, void *onAnimationEnd)
+void animate_pet(Pet *pet, unsigned char *addr, int length, int speed, int repeat, void *onAnimationEnd)
 {
     if (onAnimationEnd == 0)
     {
         onAnimationEnd = &set_can_tp_pet;
     }
     pet->can_tp = FALSE;
-    init_animation(&pet->form, addr, length, speed, onAnimationEnd);
+    init_animation(&pet->form, addr, length, speed, repeat, onAnimationEnd);
 }
 
 void init_pet(Pet *pet)
@@ -93,7 +93,7 @@ void init_pet(Pet *pet)
     copy_date(&pet->init, &pet->step);
     add_date(&pet->step, &add);
 
-    animate_pet(pet, data_egg_chr, 2, 50, 0);
+    animate_pet(pet, data_egg_chr, 2, 50, 0, 0);
 }
 
 /**
@@ -110,7 +110,7 @@ void hatch_pet()
     pet.hunger = 25;
     pet.strain = 19;
 
-    animate_pet(&pet, data_baby_idle_chr, 2, 50, 0);
+    animate_pet(&pet, data_baby_idle_chr, 2, 50, 0, 0);
 }
 
 /**
@@ -120,7 +120,7 @@ void grow_pet(Pet *pet)
 {
     if (pet->stage == 0)
     {
-        animate_pet(pet, data_egg_chr, 2, 30, 0);
+        animate_pet(pet, data_egg_chr, 2, 30, 0, 0);
         init_date(&pet->step, TRUE);
         Date add;
         init_date(&add, FALSE);
@@ -129,7 +129,7 @@ void grow_pet(Pet *pet)
     }
     if (pet->stage == 1)
     {
-        animate_pet(pet, data_egg_chr, 2, 15, 0);
+        animate_pet(pet, data_egg_chr, 2, 15, 0, 0);
         init_date(&pet->step, TRUE);
         Date add;
         init_date(&add, FALSE);
@@ -138,7 +138,7 @@ void grow_pet(Pet *pet)
     }
     if (pet->stage == 2)
     {
-        animate_pet(pet, data_egg_chr, 4, 15, &hatch_pet);
+        animate_pet(pet, data_egg_chr, 4, 15, 0, &hatch_pet);
         init_date(&pet->step, TRUE);
         Date add;
         init_date(&add, FALSE);
@@ -205,8 +205,13 @@ void update_pet(Pet *pet)
 }
 
 void eat_pet(Pet* pet) {
+    if(pet->hunger == 100) {
+        animate_pet(pet, data_baby_no_chr, 2, 20, 4, &set_idle_pet);
+        return;
+    }
     pet->hunger += 50;
     if(pet->hunger > 100) pet->hunger = 100;
+    animate_pet(pet, data_baby_eat_chr, 2, 20, 4, &set_idle_pet);
 }
 
 #endif

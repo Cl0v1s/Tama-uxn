@@ -199,10 +199,14 @@ void update_pet(Pet *pet)
         // 10% chance to tp pet somewhere on the screen if he can tp
         if (random(0, 100) < 10 && pet->can_tp)
         {
-            console_write('g');
             tp_pet(pet);
         }
     }
+}
+
+void eat_pet(Pet* pet) {
+    pet->hunger += 50;
+    if(pet->hunger > 100) pet->hunger = 100;
 }
 
 #endif

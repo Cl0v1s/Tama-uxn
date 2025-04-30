@@ -29,7 +29,7 @@ https://www.make.vg/brewtool/chr/index.html
 ## TODO
 
 - [x] Hatching
-- [ ] Random placement
+- [x] Random placement
 - [ ] Death
 - [ ] Stat UI
 - [ ] Stages other than baby

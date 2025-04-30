@@ -13,6 +13,10 @@ int random(int min, int max) { // TODO: rework by adding a table
     return result;
 }
 
+void callback(void* func) {
+    asm(func, "JSR2");
+}
+
 /**
  * Print 
  */
@@ -41,8 +45,9 @@ void printInt(int val) {
     }
 }
 
-#define UI 0
-#define GROUND 64-16
+#define UI_POS 64-16
+#define GROUND 64-20
+
 
 
 #endif

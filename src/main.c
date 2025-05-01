@@ -16,7 +16,7 @@ void on_screen() {
     }
     clear_screen();
     bool canDrawPet = draw_ui(&ui, &pet);
-    if(canDrawPet) draw_animation(&pet.form, pet.x, pet.y, 0x0);
+    if(canDrawPet) draw_pet(&pet);
 }
 
 void on_controller() {
@@ -50,8 +50,8 @@ void on_light() {
     toggle_day_ui(&ui);
 }
 
-void on_grow_up() {
-    if(pet.stage >= BORN_STAGE) {
+void on_grow_up_or_dead() {
+    if(pet.stage >= PET_BORN_STAGE || pet.stage == PET_DEAD_STAGE) {
         ui.disabled = FALSE;
     }
 }
@@ -64,6 +64,6 @@ void main() {
     );
     set_screen_size(96, 64);
 
-    init_pet(&pet, &on_grow_up);
+    init_pet(&pet, &on_grow_up_or_dead, &on_grow_up_or_dead);
     init_ui(&ui, &on_stats, &on_eat, &on_light);
 }

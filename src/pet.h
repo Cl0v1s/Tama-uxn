@@ -6,15 +6,22 @@
 #include "date.h"
 #include "utils.h"
 
+// dead
+#include "data/stars.chr.h"
+#include "data/angel.chr.h"
+
+// egg
 #include "data/egg.chr.h"
 
+// baby
 #include "data/baby/idle.chr.h"
 #include "data/baby/yes.chr.h"
 #include "data/baby/no.chr.h"
 #include "data/baby/eat.chr.h"
 #include "data/baby/jump.chr.h"
 
-#define BORN_STAGE 2
+#define PET_BORN_STAGE 2
+#define PET_DEAD_STAGE 100
 
 typedef struct
 {
@@ -34,9 +41,13 @@ typedef struct
 
     // is actually a function pointer
     int onGrowUp;
+    // is actually a function pointer
+    int onDead;
 } Pet;
 
 Pet pet;
+AnimatedSprite sfx1;
+AnimatedSprite sfx2;
 
 /**
  * CALLBACK when an animation is ended the pet can tp
@@ -75,7 +86,7 @@ void tp_pet(Pet *pet)
     animate_pet(pet, data_baby_jump_chr, 3, 30, 0, &set_idle_pet);
 }
 
-void init_pet(Pet *pet, void* onGrowUp)
+void init_pet(Pet *pet, void* onGrowUp, void* onDead)
 {
     pet->can_tp = TRUE;
     pet->stage = 0;
@@ -87,6 +98,7 @@ void init_pet(Pet *pet, void* onGrowUp)
     pet->y = GROUND - 32;
 
     pet->onGrowUp = onGrowUp;
+    pet->onDead = onDead;
 
     init_date(&pet->init, TRUE);
     init_date(&pet->next_update, TRUE);
@@ -118,11 +130,22 @@ void hatch_pet()
     animate_pet(&pet, data_baby_idle_chr, 2, 50, 0, 0);
 }
 
+void dead_pet(Pet* pet) {
+    pet->stage = PET_DEAD_STAGE;
+    init_animation(&pet->form, data_angel_chr, 2, 50, 0, 0);
+    init_animation(&sfx1, data_stars_chr, 2, 50, 0, 0);
+    init_animation(&sfx2, data_stars_chr, 2, 50, 0, 0);
+    if(pet->onDead != 0) {
+        callback(pet->onDead);
+    }
+} 
+ 
 /**
  * Is called when pet is growing up
  */
 void grow_pet(Pet *pet)
 {
+    if(pet->stage == PET_DEAD_STAGE) return;
     if (pet->stage == 0)
     {
         animate_pet(pet, data_egg_chr, 2, 30, 0, 0);
@@ -181,6 +204,10 @@ void stats_pet(Pet *pet)
     init_date(&add, FALSE);
     add.minute = 1;
     add_date(&pet->next_update, &add);
+
+    if(pet->happy <= 0) {
+        dead_pet(pet);
+    }
 }
 
 /**
@@ -197,7 +224,7 @@ void update_pet(Pet *pet)
         grow_pet(pet);
     }
 
-    if (pet->stage > BORN_STAGE)
+    if (pet->stage > PET_BORN_STAGE && pet->stage != PET_DEAD_STAGE)
     {
         // handle stats
         if (compare_date(&pet->next_update, &now) <= -1)
@@ -220,6 +247,17 @@ void eat_pet(Pet* pet) {
     pet->hunger += 50;
     if(pet->hunger > 100) pet->hunger = 100;
     animate_pet(pet, data_baby_eat_chr, 2, 20, 4, &set_idle_pet);
+}
+
+
+void draw_pet(Pet* pet) {
+    draw_animation(&pet->form, pet->x, pet->y, 0x0);
+    if(sfx1.addr != 0) {
+        draw_animation(&sfx1, pet->x - 32, pet->y, 0x0);
+    }
+    if(sfx2.addr != 0) {
+        draw_animation(&sfx2, pet->x + 32, pet->y, 0x0);
+    }
 }
 
 #endif

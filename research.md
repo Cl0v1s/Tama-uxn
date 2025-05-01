@@ -26,11 +26,16 @@ To convert modern images (such as png) to .chr, we use
 https://www.make.vg/brewtool/chr/index.html
 
 
+## Issues
+
+* I dont really get how the color system works in 2bpp mode
+
+
 ## TODO
 
 - [x] Hatching
 - [x] Random placement
-- [ ] Death
+- [x] Death
 - [x] Base UI
 - [ ] sleeping
 - [x] Stat UI

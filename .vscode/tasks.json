@@ -1,0 +1,12 @@
+{
+    "version": "2.0.0",
+    "tasks": [{
+        "label": "Build UXN",
+        "command": "make", 
+        "type": "shell",
+        "group": {
+            "kind": "build",
+            "isDefault": true
+          }
+    }]
+}

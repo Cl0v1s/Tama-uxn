@@ -31,9 +31,30 @@ typedef struct
     unsigned char x;
     unsigned char y;
     bool can_tp;
+
+    // is actually a function pointer
+    int onGrowUp;
 } Pet;
 
 Pet pet;
+
+/**
+ * CALLBACK when an animation is ended the pet can tp
+ */
+void set_can_tp_pet()
+{
+    pet.can_tp = TRUE;
+}
+
+void animate_pet(Pet *pet, unsigned char *addr, int length, int speed, int repeat, void *onAnimationEnd)
+{
+    if (onAnimationEnd == 0)
+    {
+        onAnimationEnd = &set_can_tp_pet;
+    }
+    pet->can_tp = FALSE;
+    init_animation(&pet->form, addr, length, speed, repeat, onAnimationEnd);
+}
 
 /**
  * CALLBACK
@@ -54,25 +75,7 @@ void tp_pet(Pet *pet)
     animate_pet(pet, data_baby_jump_chr, 3, 30, 0, &set_idle_pet);
 }
 
-/**
- * CALLBACK when an animation is ended the pet can tp
- */
-void set_can_tp_pet()
-{
-    pet.can_tp = TRUE;
-}
-
-void animate_pet(Pet *pet, unsigned char *addr, int length, int speed, int repeat, void *onAnimationEnd)
-{
-    if (onAnimationEnd == 0)
-    {
-        onAnimationEnd = &set_can_tp_pet;
-    }
-    pet->can_tp = FALSE;
-    init_animation(&pet->form, addr, length, speed, repeat, onAnimationEnd);
-}
-
-void init_pet(Pet *pet)
+void init_pet(Pet *pet, void* onGrowUp)
 {
     pet->can_tp = TRUE;
     pet->stage = 0;
@@ -82,6 +85,8 @@ void init_pet(Pet *pet)
 
     pet->x = screen_width() / 2 - 32 / 2;
     pet->y = GROUND - 32;
+
+    pet->onGrowUp = onGrowUp;
 
     init_date(&pet->init, TRUE);
     init_date(&pet->next_update, TRUE);
@@ -144,6 +149,9 @@ void grow_pet(Pet *pet)
         init_date(&add, FALSE);
         add.year = 1;
         add_date(&pet->step, &add);
+    }
+    if(pet->onGrowUp != 0) {
+        callback(pet->onGrowUp);
     }
     pet->stage += 1;
 }

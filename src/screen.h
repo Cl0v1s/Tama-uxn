@@ -2,6 +2,7 @@
 #define SCREEN_H
 
 #include "lib/varvara.h"
+#include "utils.h"
 
 typedef struct {
     unsigned char* addr;

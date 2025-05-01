@@ -15,7 +15,8 @@ void on_screen() {
         update_pet(&pet);
     }
     clear_screen();
-    draw_ui(&ui);
+    bool canDrawPet = draw_ui(&ui, &pet);
+    if(canDrawPet) draw_animation(&pet.form, pet.x, pet.y, 0x0);
 }
 
 void on_controller() {
@@ -32,7 +33,7 @@ void back_to_main() {
 
 void on_stats() {
     if(ui.mode == UI_MODE_MAIN) {
-        set_mode_ui(&ui, UI_MODE_STATS);
+        set_mode_ui(&ui, UI_MODE_HAPPY);
     } else {
         back_to_main();
     }
@@ -49,6 +50,12 @@ void on_light() {
     toggle_day_ui(&ui);
 }
 
+void on_grow_up() {
+    if(pet.stage >= BORN_STAGE) {
+        ui.disabled = FALSE;
+    }
+}
+
 void main() {
     set_palette(
         DAY_1, 
@@ -57,6 +64,6 @@ void main() {
     );
     set_screen_size(96, 64);
 
-    init_pet(&pet);
+    init_pet(&pet, &on_grow_up);
     init_ui(&ui, &on_stats, &on_eat, &on_light);
 }

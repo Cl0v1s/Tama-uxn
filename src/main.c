@@ -50,10 +50,11 @@ void on_light() {
     toggle_day_ui(&ui);
 }
 
-void on_grow_up_or_dead() {
+void on_stats_changed() {
     if(pet.stage >= PET_BORN_STAGE || pet.stage == PET_DEAD_STAGE) {
         ui.disabled = FALSE;
     }
+    if(pet.sleeping) ui.disabled = TRUE;
 }
 
 void main() {
@@ -64,6 +65,6 @@ void main() {
     );
     set_screen_size(96, 64);
 
-    init_pet(&pet, &on_grow_up_or_dead, &on_grow_up_or_dead);
+    init_pet(&pet, &on_stats_changed);
     init_ui(&ui, &on_stats, &on_eat, &on_light);
 }

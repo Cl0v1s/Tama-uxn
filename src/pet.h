@@ -47,9 +47,7 @@ typedef struct
     bool can_tp;
 
     // is actually a function pointer
-    int onGrowUp;
-    // is actually a function pointer
-    int onDead;
+    int onStatsChanged;
 } Pet;
 
 Pet pet;
@@ -93,7 +91,7 @@ void tp_pet(Pet *pet)
     animate_pet(pet, data_baby_jump_chr, 3, 30, 0, &set_idle_pet);
 }
 
-void init_pet(Pet *pet, void* onGrowUp, void* onDead)
+void init_pet(Pet *pet, void* onStatsChanged)
 {
     pet->can_tp = TRUE;
     pet->stage = 0;
@@ -108,8 +106,7 @@ void init_pet(Pet *pet, void* onGrowUp, void* onDead)
     pet->x = screen_width() / 2 - 32 / 2;
     pet->y = GROUND - 32;
 
-    pet->onGrowUp = onGrowUp;
-    pet->onDead = onDead;
+    pet->onStatsChanged = onStatsChanged;
 
     init_date(&pet->init, TRUE);
     init_date(&pet->next_update, TRUE);
@@ -129,6 +126,7 @@ void manage_sleep_pet(Pet* pet) {
     int sleepStartTime = pet->sleepStartHour * 60 + pet->sleepStartMinute;
     int sleepEndTime = pet->sleepEndHour * 60 + pet->sleepEndMinute;
 
+    bool before = pet->sleeping;
     // Vérifier si l'heure actuelle est dans la plage de sommeil
     if (sleepStartTime <= sleepEndTime) {
         // Cas où la plage de sommeil ne traverse pas minuit
@@ -145,6 +143,10 @@ void manage_sleep_pet(Pet* pet) {
             pet->sleeping = FALSE;
         }
     }
+
+    if(before != pet->sleeping && pet->onStatsChanged != 0) {
+        callback(pet->onStatsChanged);
+    }
 }
 
 void dead_pet(Pet* pet) {
@@ -152,8 +154,8 @@ void dead_pet(Pet* pet) {
     init_animation(&pet->form, data_angel_chr, 2, 50, 0, 0);
     init_animation(&sfx1, data_stars_chr, 2, 50, 0, 0);
     init_animation(&sfx2, data_stars_chr, 2, 50, 0, 0);
-    if(pet->onDead != 0) {
-        callback(pet->onDead);
+    if(pet->onStatsChanged != 0) {
+        callback(pet->onStatsChanged);
     }
 } 
  
@@ -237,8 +239,8 @@ void grow_pet(Pet *pet)
         pet->sleepEndMinute = 0;
     }
 
-    if(pet->onGrowUp != 0) {
-        callback(pet->onGrowUp);
+    if(pet->onStatsChanged != 0) {
+        callback(pet->onStatsChanged);
     }
     pet->stage += 1;
 }

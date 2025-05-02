@@ -37,6 +37,12 @@ https://www.make.vg/brewtool/chr/index.html
 - [x] Random placement
 - [x] Death
 - [x] Base UI
-- [ ] sleeping
+- [x] sleeping logic
+- [ ] light on sleeping
+- [ ] sleeping animation
+- [ ] Pooping
+- [ ] Cleaning
 - [x] Stat UI
+- [ ] rework strain to hygiene in stat screen
 - [ ] Stages other than baby
+- [ ] Caremiss system

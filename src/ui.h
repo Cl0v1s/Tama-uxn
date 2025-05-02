@@ -121,7 +121,7 @@ bool draw_ui(UI* ui, Pet* pet) {
         int x = screen_width() / 2 - 64 / 2;
         int y = screen_height() / 2 - (16 + 16 + 2) / 2;
         paint(x, y, 56, 16, 0x0, data_ui_text_chr + 28 * 8 * 2);
-        draw_level_ui(pet->strain, x, y);
+        draw_level_ui(pet->hygiene, x, y);
     } else {    
         if(ui->disabled == FALSE) {
             paint(x + 0, UI_POS, 16, 16, ui->index == 0 ? hover : 0x0, data_ui_stats_chr);

@@ -21,6 +21,7 @@
 #include "data/baby/jump.chr.h"
 
 #define PET_BORN_STAGE 2
+#define PET_BABY_NAP_STAGE 3
 #define PET_DEAD_STAGE 100
 
 typedef struct
@@ -32,8 +33,14 @@ typedef struct
     AnimatedSprite form;
 
     unsigned char happy;
-    unsigned char strain;
+    unsigned char hygiene;
     unsigned char hunger;
+
+    int sleepStartHour;
+    int sleepStartMinute;
+    int sleepEndHour;
+    int sleepEndMinute;
+    bool sleeping;
 
     unsigned char x;
     unsigned char y;
@@ -91,8 +98,12 @@ void init_pet(Pet *pet, void* onGrowUp, void* onDead)
     pet->can_tp = TRUE;
     pet->stage = 0;
     pet->hunger = 100;
-    pet->strain = 100;
+    pet->hygiene = 100;
     pet->happy = 100;
+    pet->sleepStartHour = 0;
+    pet->sleepStartMinute = 0;
+    pet->sleepEndHour = 0;
+    pet->sleepEndMinute = 0;
 
     pet->x = screen_width() / 2 - 32 / 2;
     pet->y = GROUND - 32;
@@ -113,21 +124,27 @@ void init_pet(Pet *pet, void* onGrowUp, void* onDead)
     animate_pet(pet, data_egg_chr, 2, 50, 0, 0);
 }
 
-/**
- * CALLBACK when a pet hatched
- */
-void hatch_pet()
-{
-    init_date(&pet.next_update, TRUE);
-    Date add;
-    init_date(&add, FALSE);
-    add.minute = 1;
-    add_date(&pet.next_update, &add);
-    pet.happy = 100;
-    pet.hunger = 25;
-    pet.strain = 19;
+void manage_sleep_pet(Pet* pet) {
+    int currentTime = datetime_hour() * 60 + datetime_minute();
+    int sleepStartTime = pet->sleepStartHour * 60 + pet->sleepStartMinute;
+    int sleepEndTime = pet->sleepEndHour * 60 + pet->sleepEndMinute;
 
-    animate_pet(&pet, data_baby_idle_chr, 2, 50, 0, 0);
+    // Vérifier si l'heure actuelle est dans la plage de sommeil
+    if (sleepStartTime <= sleepEndTime) {
+        // Cas où la plage de sommeil ne traverse pas minuit
+        if (currentTime >= sleepStartTime && currentTime <= sleepEndTime) {
+            pet->sleeping = TRUE;
+        } else {
+            pet->sleeping = FALSE;
+        }
+    } else {
+        // Cas où la plage de sommeil traverse minuit
+        if (currentTime >= sleepStartTime || currentTime <= sleepEndTime) {
+            pet->sleeping = TRUE;
+        } else {
+            pet->sleeping = FALSE;
+        }
+    }
 }
 
 void dead_pet(Pet* pet) {
@@ -145,6 +162,11 @@ void dead_pet(Pet* pet) {
  */
 void grow_pet(Pet *pet)
 {
+    print("GROW ");
+    printInt(pet->stage);
+    putchar('>');
+    printInt(pet->stage+1);
+    putchar('\n');
     if(pet->stage == PET_DEAD_STAGE) return;
     if (pet->stage == 0)
     {
@@ -155,7 +177,7 @@ void grow_pet(Pet *pet)
         add.second = 1; // TODO: change
         add_date(&pet->step, &add);
     }
-    if (pet->stage == 1)
+    else if (pet->stage == 1)
     {
         animate_pet(pet, data_egg_chr, 2, 15, 0, 0);
         init_date(&pet->step, TRUE);
@@ -164,15 +186,57 @@ void grow_pet(Pet *pet)
         add.second = 1; // TODO: change
         add_date(&pet->step, &add);
     }
-    if (pet->stage == 2)
+    else if (pet->stage == PET_BORN_STAGE)
     {
-        animate_pet(pet, data_egg_chr, 4, 15, 0, &hatch_pet);
+        animate_pet(pet, data_egg_chr, 4, 15, 0, &set_idle_pet);
+
+        // set next update
+        init_date(&pet->next_update, TRUE);
+        Date add;
+        init_date(&add, FALSE);
+        add.minute = 1;
+        add_date(&pet->next_update, &add);
+
+        // set init stats
+        pet->happy = 100;
+        pet->hunger = 25;
+        pet->hygiene = 19;
+
+        // init sleeping state for nap
+        Date now;
+        init_date(&now, TRUE);
+        init_date(&add, FALSE);
+
+        // start
+        add.minute = 1;
+        add_date(&now, &add);
+        pet->sleepStartHour = now.hour;
+        pet->sleepStartMinute = now.minute;
+
+        // end
+        add.minute = 2;
+        add_date(&now, &add);
+        pet->sleepEndHour = now.hour;
+        pet->sleepEndMinute = now.minute;
+
+        // set next grow up when wakeup
+        copy_date(&now, &pet->step);
+    }
+    else if(pet->stage == PET_BABY_NAP_STAGE) {
         init_date(&pet->step, TRUE);
         Date add;
         init_date(&add, FALSE);
-        add.year = 1;
+        add.year = 1; // TODO: change
         add_date(&pet->step, &add);
+
+        //TODO: make it better to handle other stages than baby
+        pet->sleeping =  FALSE;
+        pet->sleepStartHour = 19;
+        pet->sleepStartMinute = 0;
+        pet->sleepEndHour = 7;
+        pet->sleepEndMinute = 0;
     }
+
     if(pet->onGrowUp != 0) {
         callback(pet->onGrowUp);
     }
@@ -184,17 +248,20 @@ void grow_pet(Pet *pet)
  */
 void stats_pet(Pet *pet)
 {
+    print("Stats\n");
+    manage_sleep_pet(pet);
+
     // BABY stats
     // TODO: set other stages
     pet->hunger += -75 / 30; // TODO: handle float
-    pet->strain += -75 / 40; // TODO: handle float
+    pet->hygiene += -75 / 40; // TODO: handle float
 
     // GLOBAL stats
-    if (pet->hunger < 25 || pet->strain < 25)
+    if (pet->hunger < 25 || pet->hygiene < 25)
     {
         pet->happy += -5;
     }
-    if (pet->hunger > 50 && pet->strain > 50)
+    if (pet->hunger > 50 && pet->hygiene > 50)
     {
         pet->happy += 1;
     }
@@ -219,20 +286,21 @@ void update_pet(Pet *pet)
     init_date(&now, TRUE);
 
     // handle growing up
-    if (compare_date(&pet->step, &now) <= -1)
-    { // next step if in the past
+    if (compare_date(&pet->step, &now) <= 0)
+    { 
+        // next step if in the past
         grow_pet(pet);
     }
 
     if (pet->stage > PET_BORN_STAGE && pet->stage != PET_DEAD_STAGE)
     {
         // handle stats
-        if (compare_date(&pet->next_update, &now) <= -1)
+        if (compare_date(&pet->next_update, &now) <= 0)
         { // next step if in the past
             stats_pet(pet);
         }
         // 10% chance to tp pet somewhere on the screen if he can tp
-        if (random(0, 100) < 10 && pet->can_tp)
+        if (random(0, 100) < 10 && pet->can_tp && pet->sleeping == FALSE)
         {
             tp_pet(pet);
         }

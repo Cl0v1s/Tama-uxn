@@ -17,9 +17,13 @@ void callback(void* func) {
     asm(func, "JSR2");
 }
 
-/**
- * Print 
- */
+void print(char* buffer) {
+    int index = 0;
+    while (buffer[index] != '\0') {
+        console_write(buffer[index++]);
+    }
+}
+
 void printInt(int val) {
     int isNegative = 0;
     if (val < 0) {
@@ -44,6 +48,8 @@ void printInt(int val) {
         console_write(buffer[index++]);
     }
 }
+
+
 
 #define UI_POS 64-16
 #define GROUND 64-20

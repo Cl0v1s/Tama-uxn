@@ -88,7 +88,8 @@ void set_idle_pet() {
  */
 void tp_pet(Pet *pet)
 {
-    pet->position.x = random(0, screen_width() - 32);
+    int min = pet->poopCount > 0 ? POOP_MAX_POOPS * 16 : 0;
+    pet->position.x = random(min, screen_width() - 32);
     pet->position.y = GROUND - 32 - random(0, 3);
     // TODO: maybe try to play an animation
     animate_pet(pet, data_baby_jump_chr, 3, 30, 0, &set_idle_pet);
@@ -257,6 +258,7 @@ void manage_poop_pet(Pet* pet) {
             pet->happy -= 25;
         } else {
             pet->poopCount += 1;
+            tp_pet(pet);
             init_poop();
         }
         pet->poop = 100;

@@ -41,7 +41,7 @@ https://www.make.vg/brewtool/chr/index.html
 - [ ] light on sleeping
 - [ ] sleeping animation
 - [x] Pooping
-- [ ] Poop UI and Poop sprite
+- [ ] Poop UI
 - [ ] Cleaning
 - [x] Stat UI
 - [ ] rework strain to hygiene in stat screen

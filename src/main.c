@@ -47,6 +47,10 @@ void on_eat() {
     eat_pet(&pet);
 }
 
+void on_clean() {
+    back_to_main();
+    clean_poop_pet(&pet);
+}
 
 void on_light() {
     back_to_main();
@@ -70,5 +74,5 @@ void main() {
 
     clean_poop();
     init_pet(&pet, &on_stats_changed);
-    init_ui(&ui, &on_stats, &on_eat, &on_light);
+    init_ui(&ui, &on_stats, &on_eat, &on_clean, &on_light);
 }

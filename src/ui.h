@@ -11,11 +11,11 @@
 #include "data/ui/light.chr.h"
 #include "data/ui/text.chr.h"
 #include "data/ui/levels.chr.h"
+#include "data/ui/clean.chr.h"
 
 #define UI_SIZE 16
 #define UI_GAP 2
-#define UI_LENGTH 3
-#define UI_COOLDOWN 10
+#define UI_LENGTH 4
 
 #define UI_MODE_MAIN 0
 #define UI_MODE_HAPPY 1
@@ -47,7 +47,7 @@ typedef struct {
 
 UI ui;
 
-void init_ui(UI* ui, void* on_stats, void* on_eat, void* on_light) {
+void init_ui(UI* ui, void* on_stats, void* on_eat, void* on_clean, void* on_light) {
     ui->index = UI_LENGTH / 2;
     ui->is_day = TRUE;
     ui->mode = UI_MODE_MAIN;
@@ -55,7 +55,8 @@ void init_ui(UI* ui, void* on_stats, void* on_eat, void* on_light) {
 
     ui->callbacks[0] = on_stats;
     ui->callbacks[1] = on_eat;
-    ui->callbacks[2] = on_light;
+    ui->callbacks[2] = on_clean;
+    ui->callbacks[3] = on_light;
 }
 
 void set_mode_ui(UI* ui, int mode) {
@@ -125,8 +126,9 @@ bool draw_ui(UI* ui, Pet* pet) {
     } else {    
         if(ui->disabled == FALSE) {
             paint(x + 0, UI_POS, 16, 16, ui->index == 0 ? hover : 0x0, data_ui_stats_chr);
-            paint(x + spacing * 1 + UI_GAP, UI_POS, 16, 16, ui->index == 1 ? hover : 0x0, data_ui_hungry_chr);
-            paint(x + spacing * 2 + UI_GAP * 2, UI_POS - 2, 16, 16, ui->index == 2 ? hover : 0x0, data_ui_light_chr); // needs to be aligned
+            paint(x + (UI_GAP + spacing) * 1, UI_POS, 16, 16, ui->index == 1 ? hover : 0x0, data_ui_hungry_chr);
+            paint(x + (UI_GAP + spacing) * 2, UI_POS, 16, 16, ui->index == 2 ? hover : 0x0, data_ui_clean_chr); // needs to be aligned
+            paint(x + (UI_GAP + spacing) * 3, UI_POS - 2, 16, 16, ui->index == 3 ? hover : 0x0, data_ui_light_chr); // needs to be aligned
         }
         return TRUE;
     }

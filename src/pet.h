@@ -5,6 +5,7 @@
 #include "screen.h"
 #include "date.h"
 #include "utils.h"
+#include "poop.h"
 
 // dead
 #include "data/stars.chr.h"
@@ -35,6 +36,9 @@ typedef struct
     unsigned char happy;
     unsigned char hygiene;
     unsigned char hunger;
+    int poop;
+
+    unsigned char poopCount;
 
     int sleepStartHour;
     int sleepStartMinute;
@@ -42,8 +46,7 @@ typedef struct
     int sleepEndMinute;
     bool sleeping;
 
-    unsigned char x;
-    unsigned char y;
+    Vector2 position;
     bool can_tp;
 
     // is actually a function pointer
@@ -85,8 +88,8 @@ void set_idle_pet() {
  */
 void tp_pet(Pet *pet)
 {
-    pet->x = random(0, screen_width() - 32);
-    pet->y = GROUND - 32 - random(0, 3);
+    pet->position.x = random(0, screen_width() - 32);
+    pet->position.y = GROUND - 32 - random(0, 3);
     // TODO: maybe try to play an animation
     animate_pet(pet, data_baby_jump_chr, 3, 30, 0, &set_idle_pet);
 }
@@ -98,13 +101,15 @@ void init_pet(Pet *pet, void* onStatsChanged)
     pet->hunger = 100;
     pet->hygiene = 100;
     pet->happy = 100;
+    pet->poop = 100;
+    pet->poopCount = 0;
     pet->sleepStartHour = 0;
     pet->sleepStartMinute = 0;
     pet->sleepEndHour = 0;
     pet->sleepEndMinute = 0;
 
-    pet->x = screen_width() / 2 - 32 / 2;
-    pet->y = GROUND - 32;
+    pet->position.x = screen_width() / 2 - 32 / 2;
+    pet->position.y = GROUND - 32;
 
     pet->onStatsChanged = onStatsChanged;
 
@@ -203,6 +208,7 @@ void grow_pet(Pet *pet)
         pet->happy = 100;
         pet->hunger = 25;
         pet->hygiene = 19;
+        pet->poop = 100;
 
         // init sleeping state for nap
         Date now;
@@ -245,6 +251,23 @@ void grow_pet(Pet *pet)
     pet->stage += 1;
 }
 
+void manage_poop_pet(Pet* pet) {
+    if(pet->poop <= 0) {
+        if(pet->poopCount >= POOP_MAX_POOPS) {
+            pet->happy -= 25;
+        } else {
+            pet->poopCount += 1;
+            init_poop();
+        }
+        pet->poop = 100;
+    }
+}
+
+void clean_poop_pet(Pet* pet) {
+    pet->poopCount = 0;
+    clean_poop();
+}
+
 /**
  * Is called when pet stats need to be updated
  */
@@ -257,8 +280,14 @@ void stats_pet(Pet *pet)
     // TODO: set other stages
     pet->hunger += -75 / 30; // TODO: handle float
     pet->hygiene += -75 / 40; // TODO: handle float
+    pet->poop += -5; // TODO: handle float
 
-    // GLOBAL stats
+    manage_poop_pet(pet);
+
+    // handle happy
+    if(pet->poopCount > 0) {
+        pet->happy -= (2 * pet->happy / 100) * pet->poopCount;
+    }
     if (pet->hunger < 25 || pet->hygiene < 25)
     {
         pet->happy += -5;
@@ -321,12 +350,12 @@ void eat_pet(Pet* pet) {
 
 
 void draw_pet(Pet* pet) {
-    draw_animation(&pet->form, pet->x, pet->y, 0x0);
+    draw_animation(&pet->form, pet->position.x, pet->position.y, 0x0);
     if(sfx1.addr != 0) {
-        draw_animation(&sfx1, pet->x - 32, pet->y, 0x0);
+        draw_animation(&sfx1, pet->position.x - 32, pet->position.y, 0x0);
     }
     if(sfx2.addr != 0) {
-        draw_animation(&sfx2, pet->x + 32, pet->y, 0x0);
+        draw_animation(&sfx2, pet->position.x + 32, pet->position.y, 0x0);
     }
 }
 

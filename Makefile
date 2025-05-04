@@ -9,11 +9,11 @@ FILES := $(DATA_FILES:.chr=.chr.h)
 
 ALL: tools/chibicc tools/uxnasm tools/uxncli tools/uxnemu tama.rom
 
-init-submodules:
+.git/modules:
 	git submodule init
 	git submodule update
 
-uxn: init-submodules
+uxn: .git/modules
 	cd uxn && ./build.sh --no-run
 	cp uxn/bin/* tools/
 
@@ -21,7 +21,7 @@ tools/uxnasm: uxn
 tools/uxncli: uxn
 tools/uxnemu: uxn
 
-tools/chibicc: init-submodules
+tools/chibicc: .git/modules
 	cd chibicc && make
 	mv chibicc/chibicc tools/chibicc
 

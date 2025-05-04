@@ -3,7 +3,7 @@
 #include "pet.h"
 #include "utils.h"
 #include "ui.h"
-
+#include "poop.h"
 
 unsigned char counter = 0;
 void on_screen() {
@@ -15,8 +15,11 @@ void on_screen() {
         update_pet(&pet);
     }
     clear_screen();
-    bool canDrawPet = draw_ui(&ui, &pet);
-    if(canDrawPet) draw_pet(&pet);
+    bool canDraw = draw_ui(&ui, &pet);
+    if(canDraw) {
+        draw_pet(&pet);
+        draw_poop();
+    }
 }
 
 void on_controller() {
@@ -65,6 +68,7 @@ void main() {
     );
     set_screen_size(96, 64);
 
+    clean_poop();
     init_pet(&pet, &on_stats_changed);
     init_ui(&ui, &on_stats, &on_eat, &on_light);
 }

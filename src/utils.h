@@ -7,6 +7,11 @@ typedef int bool;
 #define TRUE  1
 #define FALSE 0
 
+typedef struct {
+    unsigned char x;
+    unsigned char y;
+} Vector2;
+
 unsigned char random_counter;
 int random(int min, int max) { // TODO: rework by adding a table 
     int result = min + ((random_counter) % (max - min));

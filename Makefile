@@ -7,9 +7,21 @@ FILES := $(DATA_FILES:.chr=.chr.h)
 
 .PHONY: tama.tal tmp.c
 
-ALL: tools/chibicc tama.rom
+ALL: tools/chibicc tools/uxnasm tools/uxncli tools/uxnemu tama.rom
 
-tools/chibicc:
+init-submodules:
+	git submodule init
+	git submodule update
+
+uxn: init-submodules
+	cd uxn && ./build.sh --no-run
+	cp uxn/bin/* tools/
+
+tools/uxnasm: uxn
+tools/uxncli: uxn
+tools/uxnemu: uxn
+
+tools/chibicc: init-submodules
 	cd chibicc && make
 	mv chibicc/chibicc tools/chibicc
 

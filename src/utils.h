@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include "lib/varvara.h"
 
 typedef int bool;
 #define TRUE  1

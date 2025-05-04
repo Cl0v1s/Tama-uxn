@@ -3,3 +3,6 @@ tama.tal
 tama.rom
 *.sym
 tools/chibicc
+tools/uxnasm
+tools/uxncli
+tools/uxnemu

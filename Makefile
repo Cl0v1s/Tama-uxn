@@ -5,16 +5,16 @@ DATA_FILES := $(wildcard $(DATA)/*/*) $(wildcard $(DATA)/*)
 
 FILES := $(DATA_FILES:.chr=.chr.h) 
 
-chibicc = ./tools/chibicc
-ifeq ($(shell uname -m), arm64)
-    chibicc = ./tools/chibicc-apple
-endif
-
 .PHONY: tama.tal tmp.c
 
-ALL: tama.rom
+ALL: tools/chibicc tama.rom
+
+tools/chibicc:
+	cd chibicc && make
+	mv chibicc/chibicc tools/chibicc
 
 clean:
+	rm tools/chibicc
 	rm -rf ./data/*.h
 	rm -f ./*.c
 	rm -f tama.rom
@@ -28,7 +28,7 @@ tmp.c: $(FILES)
 	gcc -I. -P -E src/main.c -o $@
 
 tama.tal: tmp.c
-	$(chibicc) -O1 $< > $@
+	./tools/chibicc $< > $@
 
 tama.rom: tama.tal
 	./tools/uxnasm $< $@

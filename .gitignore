@@ -2,3 +2,4 @@ tmp.c
 tama.tal
 tama.rom
 *.sym
+tools/chibicc

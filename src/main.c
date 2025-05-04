@@ -50,6 +50,7 @@ void on_eat() {
 void on_clean() {
     back_to_main();
     clean_poop_pet(&pet);
+    set_mode_ui(&ui, UI_MODE_CLEAN);
 }
 
 void on_light() {

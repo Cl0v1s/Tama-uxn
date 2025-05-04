@@ -41,9 +41,9 @@ https://www.make.vg/brewtool/chr/index.html
 - [ ] light on sleeping
 - [ ] sleeping animation
 - [x] Pooping
-- [ ] Poop UI
-- [ ] Cleaning
+- [x] Poop UI
+- [x] Cleaning
 - [x] Stat UI
-- [ ] rework strain to hygiene in stat screen
+- [ ] find some thing to do instead of hygiene
 - [ ] Stages other than baby
 - [ ] Caremiss system

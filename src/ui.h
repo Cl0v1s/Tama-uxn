@@ -20,7 +20,8 @@
 #define UI_MODE_MAIN 0
 #define UI_MODE_HAPPY 1
 #define UI_MODE_HUNGRY 2
-#define UI_MODE_STRAIN 3
+#define UI_MODE_HYGIENE 3
+#define UI_MODE_CLEAN 4
 
 #define UI_MODE_COUNT 4
 
@@ -103,6 +104,34 @@ void draw_level_ui(int stat, int x, int y) {
     paint(x, y + 18, 64, 16, ui.is_day ? 0x0 : 0xa, data_ui_levels_chr + 32 * lvl * 8) ;
 }
 
+AnimatedSprite cleanAnimation;
+int cleanAnimationCounter;
+Vector2 cleanAnimationPosition;
+
+void draw_clean_callback_ui() {
+    cleanAnimationCounter -= 1;
+    if(cleanAnimationCounter <= 0) {
+        set_mode_ui(&ui, UI_MODE_MAIN);
+        cleanAnimation.addr = 0;
+    } else {
+        init_clean_ui();
+    }
+}
+
+void init_clean_ui() {
+    init_animation(&cleanAnimation, data_stars_chr, 2, 20, 0, &draw_clean_callback_ui);
+    cleanAnimationPosition.x = random(screen_width() / 2 - 16 - 16, screen_width() / 2 + 16 - 16);
+    cleanAnimationPosition.y = random(screen_height() / 2 - 16 - 16, screen_height() / 2 + 16 - 16);
+}
+
+void draw_clean_ui() {
+    if(cleanAnimation.addr == 0) {
+        cleanAnimationCounter = 3;
+        init_clean_ui();
+    }
+    draw_animation(&cleanAnimation, cleanAnimationPosition.x, cleanAnimationPosition.y, 0x00);
+}
+
 bool draw_ui(UI* ui, Pet* pet) {
     int spacing = (UI_SIZE + UI_GAP * 2);
     int x = screen_width() / 2 - UI_LENGTH * spacing / 2;
@@ -118,11 +147,13 @@ bool draw_ui(UI* ui, Pet* pet) {
         int y = screen_height() / 2 - (16 + 16 + 2) / 2;
         paint(x, y, 56, 16, 0x0, data_ui_text_chr + 28 * 8 * 1);
         draw_level_ui(pet->hunger, x, y);
-    } else if(ui->mode == UI_MODE_STRAIN) {
+    } else if(ui->mode == UI_MODE_HYGIENE) {
         int x = screen_width() / 2 - 64 / 2;
         int y = screen_height() / 2 - (16 + 16 + 2) / 2;
         paint(x, y, 56, 16, 0x0, data_ui_text_chr + 28 * 8 * 2);
         draw_level_ui(pet->hygiene, x, y);
+    } else if(ui->mode == UI_MODE_CLEAN) {
+        draw_clean_ui();
     } else {    
         if(ui->disabled == FALSE) {
             paint(x + 0, UI_POS, 16, 16, ui->index == 0 ? hover : 0x0, data_ui_stats_chr);

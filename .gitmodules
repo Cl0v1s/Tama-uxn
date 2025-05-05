@@ -1,6 +1,6 @@
 [submodule "chibicc"]
 	path = chibicc
-	url = git@github.com:lynn/chibicc.git
+	url = https://github.com/lynn/chibicc.git
 [submodule "uxn"]
 	path = uxn
 	url = https://git.sr.ht/~rabbits/uxn

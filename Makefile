@@ -5,23 +5,29 @@ DATA_FILES := $(wildcard $(DATA)/*/*) $(wildcard $(DATA)/*)
 
 FILES := $(DATA_FILES:.chr=.chr.h) 
 
-.PHONY: tama.tal tmp.c
+.PHONY: tama.tal tmp.c clean run nasu
 
-ALL: tools/chibicc tools/uxnasm tools/uxncli tools/uxnemu tama.rom
+ALL: tools/chibicc tools/uxnasm tools/uxnemu tama.rom 
 
-.git/modules:
+define submodules
 	git submodule init
 	git submodule update
+endef
 
-uxn: .git/modules
+.git/modules/chibicc:
+	@$(call submodules)
+.git/modules/uxn: 
+	@$(call submodules)
+
+uxn/bin: .git/modules/uxn
 	cd uxn && ./build.sh --no-run
-	cp uxn/bin/* tools/
 
-tools/uxnasm: uxn
-tools/uxncli: uxn
-tools/uxnemu: uxn
+tools/uxnasm: uxn/bin
+	cp uxn/bin/uxnasm tools/
+tools/uxnemu: uxn/bin
+	cp uxn/bin/uxnemu tools/
 
-tools/chibicc: .git/modules
+tools/chibicc: .git/modules/chibicc
 	cd chibicc && make
 	mv chibicc/chibicc tools/chibicc
 

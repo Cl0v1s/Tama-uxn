@@ -64,6 +64,11 @@ void set_mode_ui(UI* ui, int mode) {
     ui->mode = mode;
 }
 
+bool is_button_disabled_ui(UI* ui, int index) {
+    return ((ui->disabled >> index) & 0b00000001);
+}
+
+
 void set_disabled_ui(UI* ui, int value, int newIndexIfDisabled) {
     ui->disabled = value;
     if(is_button_disabled_ui(ui, ui->index)) {
@@ -120,6 +125,8 @@ AnimatedSprite cleanAnimation;
 int cleanAnimationCounter;
 Vector2 cleanAnimationPosition;
 
+void init_clean_ui();
+
 void draw_clean_callback_ui() {
     cleanAnimationCounter -= 1;
     if(cleanAnimationCounter <= 0) {
@@ -145,9 +152,6 @@ void draw_clean_ui() {
 }
 
 
-bool is_button_disabled_ui(UI* ui, int index) {
-    return ((ui->disabled >> index) & 0b00000001);
-}
 
 void draw_button_ui(UI* ui, int x, int y, int index, int color, unsigned char* addr) {
     if(is_button_disabled_ui(ui, index)) return;

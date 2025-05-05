@@ -60,9 +60,10 @@ void on_light() {
 
 void on_stats_changed() {
     if(pet.stage >= PET_BORN_STAGE || pet.stage == PET_DEAD_STAGE) {
-        ui.disabled = FALSE;
+        set_disabled_ui(&ui, 0x00, 0);
     }
-    if(pet.sleeping) ui.disabled = TRUE;
+
+    if(pet.sleeping) set_disabled_ui(&ui, 0b00000011, 2);
 }
 
 void main() {

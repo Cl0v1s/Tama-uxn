@@ -217,13 +217,13 @@ void grow_pet(Pet *pet)
         init_date(&add, FALSE);
 
         // start
-        add.minute = 1;
+        add.minute = 1; // TODO: change
         add_date(&now, &add);
         pet->sleepStartHour = now.hour;
         pet->sleepStartMinute = now.minute;
 
         // end
-        add.minute = 2;
+        add.minute = 2; // TODO: change 
         add_date(&now, &add);
         pet->sleepEndHour = now.hour;
         pet->sleepEndMinute = now.minute;

@@ -40,7 +40,7 @@ typedef struct {
     int index;
     bool is_day;
     int mode;
-    bool disabled;
+    char disabled;
     // int is in fact a function pointer 
     // but no diff in uxn
     int callbacks[UI_LENGTH];
@@ -52,7 +52,7 @@ void init_ui(UI* ui, void* on_stats, void* on_eat, void* on_clean, void* on_ligh
     ui->index = UI_LENGTH / 2;
     ui->is_day = TRUE;
     ui->mode = UI_MODE_MAIN;
-    ui->disabled = TRUE;
+    ui->disabled = 0xff;
 
     ui->callbacks[0] = on_stats;
     ui->callbacks[1] = on_eat;
@@ -62,6 +62,13 @@ void init_ui(UI* ui, void* on_stats, void* on_eat, void* on_clean, void* on_ligh
 
 void set_mode_ui(UI* ui, int mode) {
     ui->mode = mode;
+}
+
+void set_disabled_ui(UI* ui, int value, int newIndexIfDisabled) {
+    ui->disabled = value;
+    if(is_button_disabled_ui(ui, ui->index)) {
+        ui->index = newIndexIfDisabled;
+    }
 }
 
 void toggle_day_ui(UI* ui) {
@@ -83,17 +90,22 @@ void toggle_day_ui(UI* ui) {
 
 void update_ui(UI* ui) {
     if(controller_button() == ButtonLeft) {
-        ui->index = (ui->index - 1);
-        if(ui->index < 0) {
-            ui->index = UI_LENGTH - 1;
+        int value = (ui->index - 1);
+        if(value < 0) {
+            value = UI_LENGTH - 1;
         }
+        if(is_button_disabled_ui(ui, value)) return;
+        ui->index = value;
     }
     else if(controller_button() == ButtonRight) {
-        ui->index = (ui->index + 1) % UI_LENGTH;
-    } else if(controller_button() == ButtonA && ui->disabled == FALSE) {
+        int value = (ui->index + 1) % UI_LENGTH;
+        if(is_button_disabled_ui(ui, value)) return;
+        ui->index = value;
+    } else if(controller_button() == ButtonA) {
         if(ui->mode != UI_MODE_MAIN) {
             set_mode_ui(ui, (ui->mode + 1) % UI_MODE_COUNT); 
         } else {
+            if((ui->disabled >> ui->index) & 0b00000001) return;
             callback(ui->callbacks[ui->index]);
         }
     }
@@ -132,6 +144,16 @@ void draw_clean_ui() {
     draw_animation(&cleanAnimation, cleanAnimationPosition.x, cleanAnimationPosition.y, 0x00);
 }
 
+
+bool is_button_disabled_ui(UI* ui, int index) {
+    return ((ui->disabled >> index) & 0b00000001);
+}
+
+void draw_button_ui(UI* ui, int x, int y, int index, int color, unsigned char* addr) {
+    if(is_button_disabled_ui(ui, index)) return;
+    paint(x, y, 16, 16, color, addr);
+}
+
 bool draw_ui(UI* ui, Pet* pet) {
     int spacing = (UI_SIZE + UI_GAP * 2);
     int x = screen_width() / 2 - UI_LENGTH * spacing / 2;
@@ -155,11 +177,9 @@ bool draw_ui(UI* ui, Pet* pet) {
     } else if(ui->mode == UI_MODE_CLEAN) {
         draw_clean_ui();
     } else {    
-        if(ui->disabled == FALSE) {
-            paint(x + 0, UI_POS, 16, 16, ui->index == 0 ? hover : 0x0, data_ui_stats_chr);
-            paint(x + (UI_GAP + spacing) * 1, UI_POS, 16, 16, ui->index == 1 ? hover : 0x0, data_ui_hungry_chr);
-            paint(x + (UI_GAP + spacing) * 2, UI_POS, 16, 16, ui->index == 2 ? hover : 0x0, data_ui_clean_chr); // needs to be aligned
-            paint(x + (UI_GAP + spacing) * 3, UI_POS - 2, 16, 16, ui->index == 3 ? hover : 0x0, data_ui_light_chr); // needs to be aligned
+        unsigned char* icons[UI_LENGTH] = { data_ui_stats_chr, data_ui_hungry_chr, data_ui_clean_chr, data_ui_light_chr };
+        for(int i = 0; i < UI_LENGTH; i++) {
+            draw_button_ui(ui, x + (spacing + UI_GAP) * i, i == 2 ? UI_POS - 2 : UI_POS, i, ui->index == i ? hover : 0x00, icons[i]);
         }
         return TRUE;
     }

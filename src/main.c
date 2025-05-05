@@ -17,7 +17,7 @@ void on_screen() {
     clear_screen();
     bool canDraw = draw_ui(&ui, &pet);
     if(canDraw) {
-        draw_pet(&pet);
+        draw_pet(&pet, ui.is_day);
         draw_poop();
     }
 }
@@ -66,7 +66,7 @@ void on_stats_changed() {
     }
 
     if(pet.sleeping) {
-        set_disabled_ui(&ui, 0b00000011, 2);
+        set_disabled_ui(&ui, 0b00000111, 2);
     } 
 
     if(pet.sleeping != previousSleeping) {

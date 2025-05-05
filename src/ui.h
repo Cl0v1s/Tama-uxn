@@ -183,7 +183,7 @@ bool draw_ui(UI* ui, Pet* pet) {
     } else {    
         unsigned char* icons[UI_LENGTH] = { data_ui_stats_chr, data_ui_hungry_chr, data_ui_clean_chr, data_ui_light_chr };
         for(int i = 0; i < UI_LENGTH; i++) {
-            draw_button_ui(ui, x + (spacing + UI_GAP) * i, i == 2 ? UI_POS - 2 : UI_POS, i, ui->index == i ? hover : 0x00, icons[i]);
+            draw_button_ui(ui, x + (spacing + UI_GAP) * i, i == 3 ? UI_POS - 2 : UI_POS, i, ui->index == i ? hover : 0x00, icons[i]);
         }
         return TRUE;
     }

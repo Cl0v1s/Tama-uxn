@@ -154,16 +154,14 @@ void manage_sleep_pet(Pet* pet) {
 
     if(before != pet->sleeping) {
         if(pet->sleeping) {
-            pet->form.addr = 0;
             sfx1.addr = 0;
             init_animation(&sfx2, data_zzz_chr, 3,50, 0, 0);
             pet->position.x = screen_width() / 2 - 32 / 2;
             pet->position.y = GROUND - 32;
         } else {
-            print("stop\n");
+            set_idle_pet();
             sfx1.addr = 0;
             sfx2.addr = 0;
-            set_idle_pet();
         }
         if(pet->onStatsChanged != 0) callback(pet->onStatsChanged);
     }
@@ -237,7 +235,7 @@ void grow_pet(Pet *pet)
         pet->sleepStartMinute = now.minute;
 
         // end
-        add.minute = 2; // TODO: change 
+        add.minute = 1; // TODO: change 
         add_date(&now, &add);
         pet->sleepEndHour = now.hour;
         pet->sleepEndMinute = now.minute;
@@ -253,7 +251,6 @@ void grow_pet(Pet *pet)
         add_date(&pet->step, &add);
 
         //TODO: make it better to handle other stages than baby
-        pet->sleeping =  FALSE;
         pet->sleepStartHour = 19;
         pet->sleepStartMinute = 0;
         pet->sleepEndHour = 7;
@@ -365,8 +362,8 @@ void eat_pet(Pet* pet) {
 }
 
 
-void draw_pet(Pet* pet) {
-    if(pet->form.addr != 0) {
+void draw_pet(Pet* pet, bool lightOn) {
+    if(pet->form.addr != 0 && (pet->sleeping != TRUE || lightOn)) {
         draw_animation(&pet->form, pet->position.x, pet->position.y, 0x0);
     }
     if(sfx1.addr != 0) {

@@ -58,12 +58,21 @@ void on_light() {
     toggle_day_ui(&ui);
 }
 
+
+bool previousSleeping = FALSE;
 void on_stats_changed() {
     if(pet.stage >= PET_BORN_STAGE || pet.stage == PET_DEAD_STAGE) {
         set_disabled_ui(&ui, 0x00, 0);
     }
 
-    if(pet.sleeping) set_disabled_ui(&ui, 0b00000011, 2);
+    if(pet.sleeping) {
+        set_disabled_ui(&ui, 0b00000011, 2);
+    } 
+
+    if(pet.sleeping != previousSleeping) {
+        toggle_day_ui(&ui);
+    }
+    previousSleeping = pet.sleeping;
 }
 
 void main() {

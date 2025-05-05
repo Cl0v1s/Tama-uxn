@@ -7,6 +7,8 @@
 #include "utils.h"
 #include "poop.h"
 
+#include "data/zzz.chr.h"
+
 // dead
 #include "data/stars.chr.h"
 #include "data/angel.chr.h"
@@ -150,8 +152,20 @@ void manage_sleep_pet(Pet* pet) {
         }
     }
 
-    if(before != pet->sleeping && pet->onStatsChanged != 0) {
-        callback(pet->onStatsChanged);
+    if(before != pet->sleeping) {
+        if(pet->sleeping) {
+            pet->form.addr = 0;
+            sfx1.addr = 0;
+            init_animation(&sfx2, data_zzz_chr, 3,50, 0, 0);
+            pet->position.x = screen_width() / 2 - 32 / 2;
+            pet->position.y = GROUND - 32;
+        } else {
+            print("stop\n");
+            sfx1.addr = 0;
+            sfx2.addr = 0;
+            set_idle_pet();
+        }
+        if(pet->onStatsChanged != 0) callback(pet->onStatsChanged);
     }
 }
 
@@ -352,7 +366,9 @@ void eat_pet(Pet* pet) {
 
 
 void draw_pet(Pet* pet) {
-    draw_animation(&pet->form, pet->position.x, pet->position.y, 0x0);
+    if(pet->form.addr != 0) {
+        draw_animation(&pet->form, pet->position.x, pet->position.y, 0x0);
+    }
     if(sfx1.addr != 0) {
         draw_animation(&sfx1, pet->position.x - 32, pet->position.y, 0x0);
     }

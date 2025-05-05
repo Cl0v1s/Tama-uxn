@@ -38,7 +38,7 @@ https://www.make.vg/brewtool/chr/index.html
 - [x] Death
 - [x] Base UI
 - [x] sleeping logic
-- [ ] light on sleeping
+- [x] light on sleeping
 - [ ] sleeping animation
 - [x] Pooping
 - [x] Poop UI

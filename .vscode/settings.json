@@ -5,6 +5,7 @@
         "chrono": "cpp",
         "pet.h": "c",
         "ranges": "c",
-        "variant": "c"
+        "variant": "c",
+        "stats.chr.h": "c"
     }
 }

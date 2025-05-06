@@ -5,6 +5,11 @@
 #include "ui.h"
 #include "poop.h"
 
+#include "ui.h"
+#include "ui/clean_ui.h"
+#include "ui/main_ui.h"
+#include "ui/stats_ui.h"
+
 unsigned char counter = 0;
 void on_screen() {
     random_counter = (random_counter + datetime_second()) % 255;
@@ -15,62 +20,53 @@ void on_screen() {
         update_pet(&pet);
     }
     clear_screen();
-    bool canDraw = draw_ui(&ui, &pet);
-    if(canDraw) {
-        draw_pet(&pet, ui.is_day);
+    callback(ui.drawUI);
+    if(ui.drawPet) {
+        draw_pet(&pet, mainUI.is_day);
         draw_poop();
     }
 }
 
 void on_controller() {
-    update_ui(&ui);
+    if(ui.updateUI != 0) callback(ui.updateUI);
 }
 
 /**
  * UI callbacks
  */
 void back_to_main() {
-    set_mode_ui(&ui, UI_MODE_MAIN);
+    init_main_ui(0, 0, 0, 0);
 }
 
-
 void on_stats() {
-    if(ui.mode == UI_MODE_MAIN) {
-        set_mode_ui(&ui, UI_MODE_HAPPY);
-    } else {
-        back_to_main();
-    }
+    init_stats_ui();
 }
 
 void on_eat() {
-    back_to_main();
     eat_pet(&pet);
 }
 
 void on_clean() {
-    back_to_main();
     clean_poop_pet(&pet);
-    set_mode_ui(&ui, UI_MODE_CLEAN);
+    init_clean_ui();
 }
 
 void on_light() {
-    back_to_main();
-    toggle_day_ui(&ui);
+    toggle_day_main_ui();
 }
-
 
 bool previousSleeping = FALSE;
 void on_stats_changed() {
     if(pet.stage >= PET_BORN_STAGE || pet.stage == PET_DEAD_STAGE) {
-        set_disabled_ui(&ui, 0x00, 0);
+        set_disabled_main_ui(0x00, 0);
     }
 
     if(pet.sleeping) {
-        set_disabled_ui(&ui, 0b00000111, 2);
+        set_disabled_main_ui(0b00000111, 2);
     } 
 
     if(pet.sleeping != previousSleeping) {
-        toggle_day_ui(&ui);
+        toggle_day_main_ui();
     }
     previousSleeping = pet.sleeping;
 }
@@ -85,5 +81,5 @@ void main() {
 
     clean_poop();
     init_pet(&pet, &on_stats_changed);
-    init_ui(&ui, &on_stats, &on_eat, &on_clean, &on_light);
+    init_main_ui(&on_stats, &on_eat, &on_clean, &on_light);
 }

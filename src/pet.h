@@ -273,6 +273,16 @@ void grow_pet(Pet *pet)
     pet->stage += 1;
 }
 
+void set_alert_pet(Pet* pet, unsigned char reason) {
+    // TODO: add a bip or something
+    init_date(&pet->lastAlertDate, TRUE);
+    Date add;
+    init_date(&add, FALSE);
+    add.minute = 15;
+    add_date(&pet->lastAlertDate, &add);
+    pet->lastAlertReason = reason;
+}
+
 void manage_poop_pet(Pet* pet) {
     if(pet->poop <= 0) {
         if(pet->poopCount >= POOP_MAX_POOPS) {
@@ -285,15 +295,7 @@ void manage_poop_pet(Pet* pet) {
         pet->poop = 100;
     }
 }
-void set_alert_pet(Pet* pet, unsigned char reason) {
-    // TODO: add a bip or something
-    init_date(&pet->lastAlertDate, TRUE);
-    Date add;
-    init_date(&add, FALSE);
-    add.minute = 15;
-    add_date(&pet->lastAlertDate, &add);
-    pet->lastAlertReason = reason;
-}
+
 
 void reset_alert_pet(Pet* pet) {
     init_date(&pet->lastAlertDate, FALSE);
@@ -307,7 +309,6 @@ void manage_alert_pet(Pet* pet) {
     } else if(pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_HAPPY) {
         reset_alert_pet(pet);
     }
-
 
     if(pet->hunger <= 0) {
         set_alert_pet(pet, PET_ALERT_HUNGRY);

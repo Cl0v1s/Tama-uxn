@@ -27,6 +27,12 @@
 #define PET_BABY_NAP_STAGE 3
 #define PET_DEAD_STAGE 100
 
+#define PET_ALERT_HAPPY 1
+#define PET_ALERT_HUNGRY 2
+#define PET_ALERT_POOP 3
+
+#define PET_MAX_CAREMISS 3
+
 typedef struct
 {
     Date init;
@@ -35,10 +41,13 @@ typedef struct
     int stage;
     AnimatedSprite form;
 
-    unsigned char happy;
-    unsigned char hygiene;
-    unsigned char hunger;
+    int happy;
+    int hunger;
+    unsigned char caremissCount;
+    unsigned char caremissReaons[PET_MAX_CAREMISS];
     int poop;
+    Date lastAlertDate;
+    unsigned char lastAlertReason;
 
     unsigned char poopCount;
 
@@ -102,7 +111,7 @@ void init_pet(Pet *pet, void* onStatsChanged)
     pet->can_tp = TRUE;
     pet->stage = 0;
     pet->hunger = 100;
-    pet->hygiene = 100;
+    pet->caremissCount = 0;
     pet->happy = 100;
     pet->poop = 100;
     pet->poopCount = 0;
@@ -110,12 +119,14 @@ void init_pet(Pet *pet, void* onStatsChanged)
     pet->sleepStartMinute = 0;
     pet->sleepEndHour = 0;
     pet->sleepEndMinute = 0;
+    pet->lastAlertReason = 0;
 
     pet->position.x = screen_width() / 2 - 32 / 2;
     pet->position.y = GROUND - 32;
 
     pet->onStatsChanged = onStatsChanged;
 
+    init_date(&pet->lastAlertDate, FALSE);
     init_date(&pet->init, TRUE);
     init_date(&pet->next_update, TRUE);
 
@@ -220,7 +231,6 @@ void grow_pet(Pet *pet)
         // set init stats
         pet->happy = 100;
         pet->hunger = 25;
-        pet->hygiene = 19;
         pet->poop = 100;
 
         // init sleeping state for nap
@@ -266,7 +276,7 @@ void grow_pet(Pet *pet)
 void manage_poop_pet(Pet* pet) {
     if(pet->poop <= 0) {
         if(pet->poopCount >= POOP_MAX_POOPS) {
-            pet->happy -= 25;
+            set_alert_pet(pet, PET_ALERT_POOP);
         } else {
             pet->poopCount += 1;
             tp_pet(pet);
@@ -275,10 +285,40 @@ void manage_poop_pet(Pet* pet) {
         pet->poop = 100;
     }
 }
+void set_alert_pet(Pet* pet, unsigned char reason) {
+    // TODO: add a bip or something
+    init_date(&pet->lastAlertDate, TRUE);
+    Date add;
+    init_date(&add, FALSE);
+    add.minute = 15;
+    add_date(&pet->lastAlertDate, &add);
+    pet->lastAlertReason = reason;
+}
 
-void clean_poop_pet(Pet* pet) {
-    pet->poopCount = 0;
-    clean_poop();
+void reset_alert_pet(Pet* pet) {
+    init_date(&pet->lastAlertDate, FALSE);
+    pet->lastAlertReason = 0;
+}
+
+void manage_alert_pet(Pet* pet) {
+    if(pet->happy <= 0) {
+        set_alert_pet(pet, PET_ALERT_HAPPY);
+        pet->happy = 0;
+    } else if(pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_HAPPY) {
+        reset_alert_pet(pet);
+    }
+
+
+    if(pet->hunger <= 0) {
+        set_alert_pet(pet, PET_ALERT_HUNGRY);
+        pet->hunger = 0;
+    } else if(pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_HUNGRY) {
+        reset_alert_pet(pet);
+    }
+
+    if(pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_POOP && pet->poopCount < POOP_MAX_POOPS) {
+        reset_alert_pet(pet);
+    }
 }
 
 /**
@@ -292,25 +332,33 @@ void stats_pet(Pet *pet)
     // BABY stats
     // TODO: set other stages
     pet->hunger += -75 / 30; // TODO: handle float
-    pet->hygiene += -75 / 40; // TODO: handle float
+    pet->happy += -75 / 40; // TODO: handle float
     pet->poop += -5; // TODO: handle float
 
     manage_poop_pet(pet);
 
-    // handle happy
     if(pet->poopCount > 0) {
         pet->happy -= (2 * pet->happy / 100) * pet->poopCount;
     }
-    if (pet->hunger < 25 || pet->hygiene < 25)
+
+    manage_alert_pet(pet);
+
+    Date now;
+    init_date(&now, TRUE);
+    // manage alerts
+    if (pet->lastAlertDate.year != 0 && compare_date(&pet->lastAlertDate, &now) <= 0)
     {
-        pet->happy += -5;
-    }
-    if (pet->hunger > 50 && pet->hygiene > 50)
-    {
-        pet->happy += 1;
+        // reset related stats
+        if(pet->lastAlertReason == PET_ALERT_HAPPY) pet->happy = 100;
+        else if(pet->lastAlertReason == PET_ALERT_HUNGRY) pet->hunger = 100;
+        // no change for poop until next time pet is pooping, as this will trigger a new alert
+
+        pet->caremissReaons[pet->caremissCount] = pet->lastAlertReason;
+        pet->caremissCount += 1;
+        reset_alert_pet(pet);
     }
 
-    init_date(&pet->next_update, TRUE);
+    copy_date(&now, &pet->next_update);
     Date add;
     init_date(&add, FALSE);
     add.minute = 1;
@@ -351,6 +399,12 @@ void update_pet(Pet *pet)
     }
 }
 
+void clean_poop_pet(Pet* pet) {
+    pet->poopCount = 0;
+    clean_poop();
+    manage_alert_pet(pet);
+}
+
 void eat_pet(Pet* pet) {
     if(pet->hunger == 100) {
         animate_pet(pet, data_baby_no_chr, 2, 20, 4, &set_idle_pet);
@@ -359,6 +413,7 @@ void eat_pet(Pet* pet) {
     pet->hunger += 50;
     if(pet->hunger > 100) pet->hunger = 100;
     animate_pet(pet, data_baby_eat_chr, 2, 20, 4, &set_idle_pet);
+    manage_alert_pet(pet);
 }
 
 

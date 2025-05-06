@@ -12,6 +12,7 @@
 #include "data/ui/text.chr.h"
 #include "data/ui/levels.chr.h"
 #include "data/ui/clean.chr.h"
+#include "data/ui/alert.chr.h"
 
 #define UI_SIZE 16
 #define UI_GAP 2
@@ -177,13 +178,18 @@ bool draw_ui(UI* ui, Pet* pet) {
         int x = screen_width() / 2 - 64 / 2;
         int y = screen_height() / 2 - (16 + 16 + 2) / 2;
         paint(x, y, 56, 16, 0x0, data_ui_text_chr + 28 * 8 * 2);
-        draw_level_ui(pet->hygiene, x, y);
+        // draw_level_ui(pet->hygiene, x, y); TODO: draw caremiss here
     } else if(ui->mode == UI_MODE_CLEAN) {
         draw_clean_ui();
     } else {    
         unsigned char* icons[UI_LENGTH] = { data_ui_stats_chr, data_ui_hungry_chr, data_ui_clean_chr, data_ui_light_chr };
+        // draw main UI button
         for(int i = 0; i < UI_LENGTH; i++) {
             draw_button_ui(ui, x + (spacing + UI_GAP) * i, i == 3 ? UI_POS - 2 : UI_POS, i, ui->index == i ? hover : 0x00, icons[i]);
+        }
+        // draw alert icon
+        if(pet->lastAlertDate.year != 0) {
+            paint(screen_width() - 18, 0, 16, 16, 0x0, data_ui_alert_chr);
         }
         return TRUE;
     }

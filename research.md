@@ -39,11 +39,13 @@ https://www.make.vg/brewtool/chr/index.html
 - [x] Base UI
 - [x] sleeping logic
 - [x] light on sleeping
-- [ ] sleeping animation
+- [x] sleeping animation
 - [x] Pooping
 - [x] Poop UI
 - [x] Cleaning
 - [x] Stat UI
-- [ ] find some thing to do instead of hygiene
+- [x] find some thing to do instead of hygiene
 - [ ] Stages other than baby
 - [ ] Caremiss system
+- [ ] Caremiss UI
+- [ ] add action to manage happiness

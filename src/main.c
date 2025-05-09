@@ -1,7 +1,9 @@
 #include "lib/varvara.h"
 
 #include "data/skull.chr.h"
-
+#include "data/meal.chr.h"
+#include "data/treat.chr.h"
+#include "data/ui/cursor.chr.h"
 
 
 #include "./screen.h"
@@ -14,6 +16,7 @@
 #include "ui/clean_ui.h"
 #include "ui/main_ui.h"
 #include "ui/stats_ui.h"
+#include "ui/food_ui.h"
 
 unsigned char counter = 0;
 void on_screen() {
@@ -39,16 +42,12 @@ void on_controller() {
 /**
  * UI callbacks
  */
-void back_to_main() {
-    init_main_ui(0, 0, 0, 0);
-}
-
 void on_stats() {
     init_stats_ui();
 }
 
 void on_eat() {
-    eat_pet(&pet);
+    init_food_ui();
 }
 
 void on_clean() {

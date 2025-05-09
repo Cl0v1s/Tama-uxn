@@ -1,4 +1,9 @@
 #include "lib/varvara.h"
+
+#include "data/skull.chr.h"
+
+
+
 #include "./screen.h"
 #include "pet.h"
 #include "utils.h"

@@ -48,7 +48,9 @@ void draw_stats_ui() {
         int x = screen_width() / 2 - 64 / 2;
         int y = screen_height() / 2 - (16 + 16 + 2) / 2;
         paint(x, y, 56, 16, 0x0, data_ui_text_chr + 28 * 8 * 2);
-        // draw_level_ui(pet->hygiene, x, y); TODO: draw caremiss here
+        for(int i = 0; i < pet.caremissCount; i++) {
+            paint(x + (16 + 2) * i, y + 18, 16, 16, 0x0, data_skull_chr);
+        }
     }
 }
 

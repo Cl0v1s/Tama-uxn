@@ -46,6 +46,6 @@ https://www.make.vg/brewtool/chr/index.html
 - [x] Stat UI
 - [x] find some thing to do instead of hygiene
 - [ ] Stages other than baby
-- [ ] Caremiss system
-- [ ] Caremiss UI
+- [x] Caremiss system
+- [x] Caremiss UI
 - [ ] add action to manage happiness

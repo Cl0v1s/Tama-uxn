@@ -4,6 +4,7 @@
 #include "data/meal.chr.h"
 #include "data/treat.chr.h"
 #include "data/ui/cursor.chr.h"
+#include "data/ui/weight.chr.h"
 
 
 #include "./screen.h"

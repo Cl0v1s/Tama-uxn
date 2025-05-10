@@ -8,9 +8,10 @@
 
 #define STATS_UI_HAPPY 0
 #define STATS_UI_HUNGRY 1
-#define STATS_UI_HYGIENE 2
+#define STATS_UI_CARE 2
+#define STATS_UI_WEIGHT 3
 
-#define STATS_UI_STEPS 3
+#define STATS_UI_STEPS 4
 
 typedef struct {
     unsigned char step;
@@ -34,23 +35,22 @@ void update_stats_ui() {
 }
 
 void draw_stats_ui() {
+    int x = screen_width() / 2 - 64 / 2;
+    int y = screen_height() / 2 - (16 + 16 + 2) / 2;
     if(statsUI.step == STATS_UI_HAPPY) {
-        int x = screen_width() / 2 - 64 / 2;
-        int y = screen_height() / 2 - (16 + 16 + 2) / 2;
         paint(x, y, 56, 16, 0x0, data_ui_text_chr + 28 * 8 * 0);
         draw_level_ui(pet.happy, x, y);
     } else if(statsUI.step == STATS_UI_HUNGRY) {
-        int x = screen_width() / 2 - 64 / 2;
-        int y = screen_height() / 2 - (16 + 16 + 2) / 2;
         paint(x, y, 56, 16, 0x0, data_ui_text_chr + 28 * 8 * 1);
         draw_level_ui(pet.hunger, x, y);
-    } else if(statsUI.step == STATS_UI_HYGIENE) {
-        int x = screen_width() / 2 - 64 / 2;
-        int y = screen_height() / 2 - (16 + 16 + 2) / 2;
+    } else if(statsUI.step == STATS_UI_CARE) {
         paint(x, y, 56, 16, 0x0, data_ui_text_chr + 28 * 8 * 2);
         for(int i = 0; i < pet.caremissCount; i++) {
             paint(x + (16 + 2) * i, y + 18, 16, 16, 0x0, data_skull_chr);
         }
+    } else if(statsUI.step == STATS_UI_WEIGHT) {
+        paint(x, y + 8, 16, 16, 0x0, data_ui_weight_chr);
+        // TODO: actually write numbers
     }
 }
 

@@ -42,11 +42,13 @@ void draw_food_ui() {
 }
 
 void on_meal_food_ui() {
-
+    eat_meal_pet(&pet);
+    goto_main_ui();
 }
 
 void on_treat_food_ui() {
-
+    eat_treat_pet(&pet);
+    goto_main_ui();
 }
 
 void init_food_ui() {
@@ -57,7 +59,7 @@ void init_food_ui() {
 
     foodUI.labels[0] = data_meal_chr;
     foodUI.labels[1] = data_treat_chr;
-    foodUI.labels[2] = data_meal_chr;
+    foodUI.labels[2] = data_ui_cursor_chr;
 
     ui.updateUI = (int)&update_food_ui;
     ui.drawUI = (int)&draw_food_ui;

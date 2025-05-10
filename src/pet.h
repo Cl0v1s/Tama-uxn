@@ -30,6 +30,7 @@
 #define PET_ALERT_HAPPY 1
 #define PET_ALERT_HUNGRY 2
 #define PET_ALERT_POOP 3
+#define PET_ALERT_WEIGHT 4
 
 #define PET_MAX_CAREMISS 3
 
@@ -41,6 +42,9 @@ typedef struct
     int stage;
     AnimatedSprite form;
 
+    int weightMin;
+    int weightMax;
+    int weight;
     int happy;
     int hunger;
     unsigned char caremissCount;
@@ -66,7 +70,18 @@ typedef struct
 
 Pet pet;
 AnimatedSprite sfx1;
+Vector2 sfx1Position;
 AnimatedSprite sfx2;
+Vector2 sfx2Position;
+
+
+void init_sfx_pet(AnimatedSprite* sfx, Vector2* position, int x, int y, int w, int h, int addr, int length, int speed, int repeat, void* onAnimationEnd) {
+    position->x = x;
+    position->y = y;
+    init_animation(sfx, addr, length, speed, repeat, onAnimationEnd);
+    sfx->w = w;
+    sfx->h = h;
+}
 
 /**
  * CALLBACK when an animation is ended the pet can tp
@@ -120,6 +135,9 @@ void init_pet(Pet *pet, void* onStatsChanged)
     pet->sleepEndHour = 0;
     pet->sleepEndMinute = 0;
     pet->lastAlertReason = 0;
+    pet->weight = 0;
+    pet->weightMin = 0;
+    pet->weightMax = 0;
 
     pet->position.x = screen_width() / 2 - 32 / 2;
     pet->position.y = GROUND - 32;
@@ -181,8 +199,8 @@ void manage_sleep_pet(Pet* pet) {
 void dead_pet(Pet* pet) {
     pet->stage = PET_DEAD_STAGE;
     init_animation(&pet->form, data_angel_chr, 2, 50, 0, 0);
-    init_animation(&sfx1, data_stars_chr, 2, 50, 0, 0);
-    init_animation(&sfx2, data_stars_chr, 2, 50, 0, 0);
+    init_sfx_pet(&sfx1, &sfx1Position, pet->position.x - 32, pet->position.y, 32, 32, data_stars_chr, 2, 50, 0, 0);
+    init_sfx_pet(&sfx2, &sfx2Position, pet->position.x + 32, pet->position.y, 32, 32, data_stars_chr, 2, 50, 0, 0);
     if(pet->onStatsChanged != 0) {
         callback(pet->onStatsChanged);
     }
@@ -232,6 +250,9 @@ void grow_pet(Pet *pet)
         pet->happy = 100;
         pet->hunger = 25;
         pet->poop = 100;
+        pet->weight = 20;
+        pet->weightMin = 15;
+        pet->weightMax = 30;
 
         // init sleeping state for nap
         Date now;
@@ -315,6 +336,15 @@ void manage_alert_pet(Pet* pet) {
         pet->hunger = 0;
     } else if(pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_HUNGRY) {
         reset_alert_pet(pet);
+    }
+
+    if(pet->weight < pet->weightMin || pet->weight > pet->weightMax) {
+        set_alert_pet(pet, PET_ALERT_WEIGHT);
+    } else if (pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_WEIGHT) {
+        reset_alert_pet(pet);
+    }
+    if(pet->weight <= 0) {
+        dead_pet(pet);
     }
 
     if(pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_POOP && pet->poopCount < POOP_MAX_POOPS) {
@@ -406,16 +436,43 @@ void clean_poop_pet(Pet* pet) {
     manage_alert_pet(pet);
 }
 
-void eat_pet(Pet* pet) {
-    if(pet->hunger == 100) {
-        animate_pet(pet, data_baby_no_chr, 2, 20, 4, &set_idle_pet);
-        return;
-    }
-    pet->hunger += 50;
+void clean_sfx_pet() {
+    sfx1.addr = 0;
+    sfx2.addr = 0;
+}
+
+void eat_after_pet(Pet* pet) {
+    pet->position.x = screen_width() / 2 - 32 / 2;
+    pet->position.y = GROUND - 32;
+    if(pet->happy > 100) pet->happy =  100;
     if(pet->hunger > 100) pet->hunger = 100;
     animate_pet(pet, data_baby_eat_chr, 2, 20, 4, &set_idle_pet);
     manage_alert_pet(pet);
 }
+
+void eat_meal_pet(Pet* pet) {
+    if(pet->hunger == 100) {
+        animate_pet(pet, data_baby_no_chr, 2, 20, 4, &set_idle_pet);
+        return;
+    }
+    pet->hunger += 25;
+    init_sfx_pet(&sfx1, &sfx1Position, pet->position.x - 16, pet->position.y + 16, 16, 16, data_meal_chr, 3, 50, 0, &clean_sfx_pet);
+    eat_after_pet(pet);
+}
+
+void eat_treat_pet(Pet* pet) {
+    if(pet->hunger == 100) {
+        animate_pet(pet, data_baby_no_chr, 2, 20, 4, &set_idle_pet);
+        return;
+    }
+    pet->hunger += 5;
+    pet->happy += 25;
+    pet->weight += 2;
+    init_sfx_pet(&sfx1, &sfx1Position, pet->position.x - 16, pet->position.y + 16, 16, 16, data_treat_chr, 3, 50, 0, &clean_sfx_pet);
+    eat_after_pet(pet);
+}
+
+
 
 
 void draw_pet(Pet* pet, bool lightOn) {
@@ -423,10 +480,10 @@ void draw_pet(Pet* pet, bool lightOn) {
         draw_animation(&pet->form, pet->position.x, pet->position.y, 0x0);
     }
     if(sfx1.addr != 0) {
-        draw_animation(&sfx1, pet->position.x - 32, pet->position.y, 0x0);
+        draw_animation(&sfx1, sfx1Position.x, sfx1Position.y, 0x0);
     }
     if(sfx2.addr != 0) {
-        draw_animation(&sfx2, pet->position.x + 32, pet->position.y, 0x0);
+        draw_animation(&sfx2, sfx2Position.x, sfx2Position.y, 0x0);
     }
 }
 

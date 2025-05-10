@@ -49,3 +49,5 @@ https://www.make.vg/brewtool/chr/index.html
 - [x] Caremiss system
 - [x] Caremiss UI
 - [ ] add action to manage happiness
+- [ ] weight UI
+- [ ] routine to write numbers

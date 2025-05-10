@@ -247,7 +247,7 @@ void grow_pet(Pet *pet)
         add_date(&pet->next_update, &add);
 
         // set init stats
-        pet->happy = 100;
+        pet->happy = 50;
         pet->hunger = 25;
         pet->poop = 100;
         pet->weight = 20;

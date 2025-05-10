@@ -7,7 +7,7 @@
 #include "data/ui/weight.chr.h"
 
 
-#include "./screen.h"
+#include "screen.h"
 #include "pet.h"
 #include "utils.h"
 #include "ui.h"

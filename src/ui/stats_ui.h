@@ -50,6 +50,7 @@ void draw_stats_ui() {
         }
     } else if(statsUI.step == STATS_UI_WEIGHT) {
         paint(x, y + 8, 16, 16, 0x0, data_ui_weight_chr);
+        paintInt(pet.weight, x + 32, y + 8, 0x0);
         // TODO: actually write numbers
     }
 }

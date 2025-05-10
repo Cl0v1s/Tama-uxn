@@ -4,6 +4,9 @@
 #include "lib/varvara.h"
 #include "utils.h"
 
+#include "data/ui/numbers.chr.h"
+
+
 typedef struct {
     unsigned char* addr;
     int length; // number of frames
@@ -33,6 +36,22 @@ void paint(int x, int y, int w, int h, unsigned char bitcolor, unsigned char* ad
         draw_sprite(0x80 | (bitcolor & 0x0f));
     } while (screen_y() < endy);
 } 
+
+void paintInt(int val, int x, int y, unsigned char bitcolor) {
+    char buffer[12];
+    int index = sizeof(buffer) - 1;
+    buffer[index] = '\0';
+    do {
+        buffer[--index] = val % 10 + '0';
+        val /= 10;
+    } while (val > 0);
+
+    while (buffer[index] != '\0') {
+        paint(x, y, 16, 16, bitcolor, data_ui_numbers_chr + 8 * (buffer[index] - '0') * 8);
+        x += 12;
+        index++;
+    }
+}
 
 void init_animation(AnimatedSprite* animation, unsigned char* addr, int length, int speed, int repeat, void* onAnimationEnd) {
     animation->addr = addr;

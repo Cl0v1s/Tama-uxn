@@ -74,6 +74,8 @@ void on_stats_changed() {
         toggle_day_main_ui();
     }
     previousSleeping = pet.sleeping;
+    printInt(pet.stage);
+    save(&pet, sizeof(Pet));
 }
 
 void main() {
@@ -85,6 +87,11 @@ void main() {
     set_screen_size(96, 64);
 
     clean_poop();
-    init_pet(&pet, &on_stats_changed);
+    
     init_main_ui(&on_stats, &on_eat, &on_clean, &on_light);
+    init_pet(&pet);
+    set_on_state_changed_pet(&on_stats_changed);
+    if(load_pet(&pet)) {
+        print("Loaded\n");
+    }
 }

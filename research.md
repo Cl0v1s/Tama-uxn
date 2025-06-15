@@ -48,6 +48,7 @@ https://www.make.vg/brewtool/chr/index.html
 - [ ] Stages other than baby
 - [x] Caremiss system
 - [x] Caremiss UI
-- [ ] add action to manage happiness
-- [ ] weight UI
-- [ ] routine to write numbers
+- [x] add action to manage happiness
+- [x] weight UI
+- [x] routine to write numbers
+- [ ] save system

@@ -55,6 +55,14 @@ void printInt(int val) {
     }
 }
 
+bool load(void* addr, int length) {
+    int read = file_read("save.bin", length, addr);
+    return read == length;
+}
+
+void save(void* addr, int length) {
+    file_write("save.bin", length, addr);
+}
 
 
 #define UI_POS 64-16

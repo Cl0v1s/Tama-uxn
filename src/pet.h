@@ -39,6 +39,9 @@ typedef struct
     Date init;
     Date step;
     Date next_update;
+    /**
+     * Pet "age"
+     */
     int stage;
     AnimatedSprite form;
 
@@ -64,11 +67,11 @@ typedef struct
     Vector2 position;
     bool can_tp;
 
-    // is actually a function pointer
-    int onStatsChanged;
 } Pet;
 
 Pet pet;
+void* onPetStatsChanged;
+
 AnimatedSprite sfx1;
 Vector2 sfx1Position;
 AnimatedSprite sfx2;
@@ -112,7 +115,7 @@ void set_idle_pet() {
 /**
  * Replace pet randomly on the screen
  */
-void tp_pet(Pet *pet)
+void tp_pet(Pet* pet)
 {
     int min = pet->poopCount > 0 ? POOP_MAX_POOPS * 16 : 0;
     pet->position.x = random(min, screen_width() - 32);
@@ -121,7 +124,24 @@ void tp_pet(Pet *pet)
     animate_pet(pet, data_baby_jump_chr, 3, 30, 0, &set_idle_pet);
 }
 
-void init_pet(Pet *pet, void* onStatsChanged)
+bool load_pet(Pet* pet) {
+    // this load raw data into pet
+    bool loaded = load(pet, sizeof(Pet));
+    if(loaded) {
+        /*
+            since current form may require an onAnimationEnd callback 
+            that can change from build to build, we need to ensure the form
+            is correctly set
+        */
+       tp_pet(pet);
+       if(onPetStatsChanged != 0) {
+        callback(onPetStatsChanged);
+       }
+    }
+    return loaded;
+}
+
+void init_pet(Pet *pet)
 {
     pet->can_tp = TRUE;
     pet->stage = 0;
@@ -142,8 +162,6 @@ void init_pet(Pet *pet, void* onStatsChanged)
     pet->position.x = screen_width() / 2 - 32 / 2;
     pet->position.y = GROUND - 32;
 
-    pet->onStatsChanged = onStatsChanged;
-
     init_date(&pet->lastAlertDate, FALSE);
     init_date(&pet->init, TRUE);
     init_date(&pet->next_update, TRUE);
@@ -156,6 +174,10 @@ void init_pet(Pet *pet, void* onStatsChanged)
     add_date(&pet->step, &add);
 
     animate_pet(pet, data_egg_chr, 2, 50, 0, 0);
+}
+
+void set_on_state_changed_pet(void* callback) {
+    onPetStatsChanged = callback;
 }
 
 void manage_sleep_pet(Pet* pet) {
@@ -192,7 +214,7 @@ void manage_sleep_pet(Pet* pet) {
             sfx1.addr = 0;
             sfx2.addr = 0;
         }
-        if(pet->onStatsChanged != 0) callback(pet->onStatsChanged);
+        if(onPetStatsChanged != 0) callback(onPetStatsChanged);
     }
 }
 
@@ -201,8 +223,8 @@ void dead_pet(Pet* pet) {
     init_animation(&pet->form, data_angel_chr, 2, 50, 0, 0);
     init_sfx_pet(&sfx1, &sfx1Position, pet->position.x - 32, pet->position.y, 32, 32, data_stars_chr, 2, 50, 0, 0);
     init_sfx_pet(&sfx2, &sfx2Position, pet->position.x + 32, pet->position.y, 32, 32, data_stars_chr, 2, 50, 0, 0);
-    if(pet->onStatsChanged != 0) {
-        callback(pet->onStatsChanged);
+    if(onPetStatsChanged != 0) {
+        callback(onPetStatsChanged);
     }
 } 
  
@@ -287,11 +309,10 @@ void grow_pet(Pet *pet)
         pet->sleepEndHour = 7;
         pet->sleepEndMinute = 0;
     }
-
-    if(pet->onStatsChanged != 0) {
-        callback(pet->onStatsChanged);
-    }
     pet->stage += 1;
+    if(onPetStatsChanged != 0) {
+        callback(onPetStatsChanged);
+    }
 }
 
 void set_alert_pet(Pet* pet, unsigned char reason) {

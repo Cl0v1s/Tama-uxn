@@ -15,7 +15,7 @@ typedef struct {
     int speed; // animation speed (the higher the slowest)
     int play_count; // how many times we were repeated
     int repeat; // how many times we should repeat
-    void* onAnimationEnd;
+    void* onAnimationEnd; // is actually a callback
     int w; // animation width
     int h; // animation height
 } AnimatedSprite;

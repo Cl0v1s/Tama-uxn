@@ -23,9 +23,14 @@
 #include "data/baby/eat.chr.h"
 #include "data/baby/jump.chr.h"
 
-#define PET_BORN_STAGE 2
-#define PET_BABY_NAP_STAGE 3
-#define PET_DEAD_STAGE 100
+#define PET_STAGE_INIT 0 // 0s
+#define PET_STAGE_EGG_SLOW 1  // 2min30
+#define PET_STAGE_EGG_FAST 2  // 2min30
+#define PET_STAGE_BABY_BEFORE_NAP 3 // 61min
+#define PET_STAGE_BABY_AFTER_NAP 4 // will stop there for now
+#define PET_STAGE_CHILD 5
+#define PET_STAGE_ADULT 6
+#define PET_STAGE_DEAD 100
 
 #define PET_ALERT_HAPPY 1
 #define PET_ALERT_HUNGRY 2
@@ -144,7 +149,7 @@ bool load_pet(Pet* pet) {
 void init_pet(Pet *pet)
 {
     pet->can_tp = TRUE;
-    pet->stage = 0;
+    pet->stage = PET_STAGE_INIT;
     pet->hunger = 100;
     pet->caremissCount = 0;
     pet->happy = 100;
@@ -168,7 +173,7 @@ void init_pet(Pet *pet)
 
     Date add;
     init_date(&add, FALSE);
-    add.second = 1; // TODO: change
+    add.second = 0;
 
     copy_date(&pet->init, &pet->step);
     add_date(&pet->step, &add);
@@ -219,7 +224,7 @@ void manage_sleep_pet(Pet* pet) {
 }
 
 void dead_pet(Pet* pet) {
-    pet->stage = PET_DEAD_STAGE;
+    pet->stage = PET_STAGE_DEAD;
     init_animation(&pet->form, data_angel_chr, 2, 50, 0, 0);
     init_sfx_pet(&sfx1, &sfx1Position, pet->position.x - 32, pet->position.y, 32, 32, data_stars_chr, 2, 50, 0, 0);
     init_sfx_pet(&sfx2, &sfx2Position, pet->position.x + 32, pet->position.y, 32, 32, data_stars_chr, 2, 50, 0, 0);
@@ -228,6 +233,7 @@ void dead_pet(Pet* pet) {
     }
 } 
  
+
 /**
  * Is called when pet is growing up
  */
@@ -238,34 +244,39 @@ void grow_pet(Pet *pet)
     putchar('>');
     printInt(pet->stage+1);
     putchar('\n');
-    if(pet->stage == PET_DEAD_STAGE) return;
-    if (pet->stage == 0)
+
+    if(pet->stage == PET_STAGE_DEAD) return;
+
+    pet->stage += 1;
+    if (pet->stage == PET_STAGE_EGG_SLOW) // 0 => 1
+    {
+        animate_pet(pet, data_egg_chr, 2, 50, 0, 0);
+        init_date(&pet->step, TRUE);
+        Date add;
+        init_date(&add, FALSE);
+        add.minute = 2;
+        add.second = 30;
+        add_date(&pet->step, &add);
+    }
+    else if (pet->stage == PET_STAGE_EGG_FAST) // 1 => 2
     {
         animate_pet(pet, data_egg_chr, 2, 30, 0, 0);
         init_date(&pet->step, TRUE);
         Date add;
         init_date(&add, FALSE);
-        add.second = 1; // TODO: change
+        add.minute = 2;
+        add.second = 30; 
         add_date(&pet->step, &add);
     }
-    else if (pet->stage == 1)
+    else if (pet->stage == PET_STAGE_BABY_BEFORE_NAP) // 2 => 3
     {
-        animate_pet(pet, data_egg_chr, 2, 15, 0, 0);
-        init_date(&pet->step, TRUE);
-        Date add;
-        init_date(&add, FALSE);
-        add.second = 1; // TODO: change
-        add_date(&pet->step, &add);
-    }
-    else if (pet->stage == PET_BORN_STAGE)
-    {
-        animate_pet(pet, data_egg_chr, 4, 15, 0, &set_idle_pet);
+        animate_pet(pet, data_egg_chr, 4, 15, 0, &set_idle_pet); // hatching animation
 
         // set next update
         init_date(&pet->next_update, TRUE);
         Date add;
         init_date(&add, FALSE);
-        add.minute = 1;
+        add.minute = 1; // updated every 1 minute
         add_date(&pet->next_update, &add);
 
         // set init stats
@@ -282,21 +293,24 @@ void grow_pet(Pet *pet)
         init_date(&add, FALSE);
 
         // start
-        add.minute = 1; // TODO: change
+        add.minute = 30; // will nap after 30min
         add_date(&now, &add);
         pet->sleepStartHour = now.hour;
         pet->sleepStartMinute = now.minute;
 
         // end
-        add.minute = 1; // TODO: change 
+        add.minute = 30; //  will wake up after 1h
         add_date(&now, &add);
         pet->sleepEndHour = now.hour;
         pet->sleepEndMinute = now.minute;
 
-        // set next grow up when wakeup
+        add.minute = 1;
+        add_date(&now, &add);
+
+        // set next grow up after 1 min post wakeup
         copy_date(&now, &pet->step);
     }
-    else if(pet->stage == PET_BABY_NAP_STAGE) {
+    else if(pet->stage == PET_STAGE_BABY_AFTER_NAP) { // 3 => 4
         init_date(&pet->step, TRUE);
         Date add;
         init_date(&add, FALSE);
@@ -309,7 +323,7 @@ void grow_pet(Pet *pet)
         pet->sleepEndHour = 7;
         pet->sleepEndMinute = 0;
     }
-    pet->stage += 1;
+
     if(onPetStatsChanged != 0) {
         callback(onPetStatsChanged);
     }
@@ -410,15 +424,21 @@ void stats_pet(Pet *pet)
         reset_alert_pet(pet);
     }
 
+    if(onPetStatsChanged != 0) {
+        callback(onPetStatsChanged);
+    }
+
+    if(pet->happy <= 0) {
+        dead_pet(pet);
+    }
+
     copy_date(&now, &pet->next_update);
     Date add;
     init_date(&add, FALSE);
     add.minute = 1;
     add_date(&pet->next_update, &add);
 
-    if(pet->happy <= 0) {
-        dead_pet(pet);
-    }
+
 }
 
 /**
@@ -436,7 +456,7 @@ void update_pet(Pet *pet)
         grow_pet(pet);
     }
 
-    if (pet->stage > PET_BORN_STAGE && pet->stage != PET_DEAD_STAGE)
+    if (pet->stage >= PET_STAGE_BABY_BEFORE_NAP && pet->stage < PET_STAGE_DEAD)
     {
         // handle stats
         if (compare_date(&pet->next_update, &now) <= 0)
@@ -455,6 +475,9 @@ void clean_poop_pet(Pet* pet) {
     pet->poopCount = 0;
     clean_poop();
     manage_alert_pet(pet);
+    if(onPetStatsChanged != 0) {
+        callback(onPetStatsChanged);
+    }
 }
 
 void clean_sfx_pet() {
@@ -469,6 +492,9 @@ void eat_after_pet(Pet* pet) {
     if(pet->hunger > 100) pet->hunger = 100;
     animate_pet(pet, data_baby_eat_chr, 2, 20, 4, &set_idle_pet);
     manage_alert_pet(pet);
+    if(onPetStatsChanged != 0) {
+        callback(onPetStatsChanged);
+    }
 }
 
 void eat_meal_pet(Pet* pet) {
@@ -492,9 +518,6 @@ void eat_treat_pet(Pet* pet) {
     init_sfx_pet(&sfx1, &sfx1Position, pet->position.x - 16, pet->position.y + 16, 16, 16, data_treat_chr, 3, 50, 0, &clean_sfx_pet);
     eat_after_pet(pet);
 }
-
-
-
 
 void draw_pet(Pet* pet, bool lightOn) {
     if(pet->form.addr != 0 && (pet->sleeping != TRUE || lightOn)) {

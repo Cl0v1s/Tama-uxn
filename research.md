@@ -51,4 +51,4 @@ https://www.make.vg/brewtool/chr/index.html
 - [x] add action to manage happiness
 - [x] weight UI
 - [x] routine to write numbers
-- [ ] save system
+- [x] save system

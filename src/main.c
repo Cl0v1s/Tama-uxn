@@ -62,7 +62,7 @@ void on_light() {
 
 bool previousSleeping = FALSE;
 void on_stats_changed() {
-    if(pet.stage >= PET_BORN_STAGE || pet.stage == PET_DEAD_STAGE) {
+    if(pet.stage >= PET_STAGE_BABY_BEFORE_NAP || pet.stage == PET_STAGE_DEAD) {
         set_disabled_main_ui(0x00, 0);
     }
 
@@ -74,7 +74,6 @@ void on_stats_changed() {
         toggle_day_main_ui();
     }
     previousSleeping = pet.sleeping;
-    printInt(pet.stage);
     save(&pet, sizeof(Pet));
 }
 

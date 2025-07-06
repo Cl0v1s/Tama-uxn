@@ -54,3 +54,4 @@ https://www.make.vg/brewtool/chr/index.html
 - [x] save system
 - [ ] sfx position bug 
 - [ ] sleeping animation bug after loading
+- [ ] reset after death

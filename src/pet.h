@@ -258,8 +258,8 @@ void grow_pet(Pet *pet)
         init_date(&pet->step, TRUE);
         Date add;
         init_date(&add, FALSE);
-        add.minute = 2;
-        add.second = 30;
+        add.minute = 0; // 2;
+        add.second = 1; // 30;
         add_date(&pet->step, &add);
     }
     else if (pet->stage == PET_STAGE_EGG_FAST) // 1 => 2
@@ -268,8 +268,8 @@ void grow_pet(Pet *pet)
         init_date(&pet->step, TRUE);
         Date add;
         init_date(&add, FALSE);
-        add.minute = 2;
-        add.second = 30; 
+        add.minute = 0; // 2;
+        add.second = 1; // 30; 
         add_date(&pet->step, &add);
     }
     else if (pet->stage == PET_STAGE_BABY_BEFORE_NAP) // 2 => 3
@@ -284,12 +284,10 @@ void grow_pet(Pet *pet)
         add_date(&pet->next_update, &add);
 
         // set init stats
-        Form form = FORMS[pet->formId];
-
-        pet->happy = form.happy;
-        pet->hunger = form.hunger;
-        pet->poop = form.poop;
-        pet->weight = form.weight;
+        pet->happy = FORMS[pet->formId].happy;
+        pet->hunger = FORMS[pet->formId].hunger;
+        pet->poop = FORMS[pet->formId].poop;
+        pet->weight = FORMS[pet->formId].weight;
 
         // init sleeping state for nap
         Date now;
@@ -321,10 +319,10 @@ void grow_pet(Pet *pet)
         add.year = 1; // TODO: change
         add_date(&pet->step, &add);
 
-        //TODO: make it better to handle other stages than baby
-        pet->napStartHour = 19;
+        // this is not used anymore
+        pet->napStartHour = 0;
         pet->napStartMinute = 0;
-        pet->napEndHour = 7;
+        pet->napEndHour = 0;
         pet->napEndMinute = 0;
     }
 
@@ -399,13 +397,9 @@ void stats_pet(Pet *pet)
     print("Stats\n");
     manage_sleep_pet(pet);
 
-    // BABY stats
-    Form form = FORMS[pet->formId];
-    // TODO: set other stages
-
-    pet->hunger += form.hungerDecay; // TODO: handle float
-    pet->happy += form.happyDecay; // TODO: handle float
-    pet->poop += form.poopDecay; // TODO: handle float
+    pet->hunger += FORMS[pet->formId].hungerDecay; // TODO: handle float
+    pet->happy += FORMS[pet->formId].happyDecay; // TODO: handle float
+    pet->poop += FORMS[pet->formId].poopDecay; // TODO: handle float
 
     manage_poop_pet(pet);
 

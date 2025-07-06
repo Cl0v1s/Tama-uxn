@@ -22,29 +22,29 @@ typedef struct {
     int poopDecay;
 } Form;
 
-#define FORM_BABY 0
-const Form FormBaby = {
-    .happy = 50,
-    .hunger = 25,
-    .poop = 100,
-    .weight = 20,
-
-    .weightMin = 15,
-    .weightMax = 30,
-
-    // this is usefull only after nap
-    .sleepStartHour = 19,
-    .sleepStartMinute = 0,
-    .sleepEndHour = 7,
-    .sleepEndMinute = 0,
-
-    .hungerDecay = -75 / 30,
-    .happyDecay = -75 / 40,
-    .poopDecay = -5,
-};
-
-
 #define FORMS_COUNT 1
-const Form FORMS[FORMS_COUNT] = { FormBaby };
+#define FORM_BABY 0
+
+Form FORMS[FORMS_COUNT] = {
+    // FORM_BABY
+    {
+        50,   /* happy */
+        25,   /* hunger */
+        100,  /* poop */
+        20,   /* weight */
+
+        15,   /* weightMin */
+        30,   /* weightMax */
+
+        19,   /* sleepStartHour */
+        0,    /* sleepStartMinute */
+        7,    /* sleepEndHour */
+        0,    /* sleepEndMinute */
+
+        -75 / 30,  /* hungerDecay */
+        -75 / 40,  /* happyDecay */
+        -5         /* poopDecay */
+    }
+};
 
 #endif 

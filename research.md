@@ -55,3 +55,4 @@ https://www.make.vg/brewtool/chr/index.html
 - [ ] sfx position bug 
 - [ ] sleeping animation bug after loading
 - [ ] reset after death
+- [ ] when loading only light is available 

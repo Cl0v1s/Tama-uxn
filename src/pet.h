@@ -18,11 +18,7 @@
 #include "data/egg.chr.h"
 
 // baby
-#include "data/baby/idle.chr.h"
-#include "data/baby/yes.chr.h"
-#include "data/baby/no.chr.h"
-#include "data/baby/eat.chr.h"
-#include "data/baby/jump.chr.h"
+
 
 #define PET_STAGE_INIT 0 // 0s
 #define PET_STAGE_EGG_SLOW 1  // 2min30
@@ -114,7 +110,7 @@ void animate_pet(Pet *pet, unsigned char *addr, int length, int speed, int repea
  * CALLBACK
  */
 void set_idle_pet() {
-    animate_pet(&pet, data_baby_idle_chr, 2, 50, 0, 0);
+    animate_pet(&pet, FORMS[pet.formId].idle1, 2, 50, 0, 0);
     pet.can_tp = TRUE;
 }
 
@@ -127,7 +123,7 @@ void tp_pet(Pet* pet)
     pet->position.x = random(min, screen_width() - 32);
     pet->position.y = GROUND - 32 - random(0, 3);
     // TODO: maybe try to play an animation
-    animate_pet(pet, data_baby_jump_chr, 3, 30, 0, &set_idle_pet);
+    animate_pet(pet, FORMS[pet->formId].idle2, 3, 30, 0, &set_idle_pet);
 }
 
 bool load_pet(Pet* pet) {
@@ -490,7 +486,7 @@ void eat_after_pet(Pet* pet) {
     pet->position.y = GROUND - 32;
     if(pet->happy > 100) pet->happy =  100;
     if(pet->hunger > 100) pet->hunger = 100;
-    animate_pet(pet, data_baby_eat_chr, 2, 20, 4, &set_idle_pet);
+    animate_pet(pet, FORMS[pet->formId].eat, 2, 20, 4, &set_idle_pet);
     manage_alert_pet(pet);
     if(onPetStatsChanged != 0) {
         callback(onPetStatsChanged);
@@ -499,7 +495,7 @@ void eat_after_pet(Pet* pet) {
 
 void eat_meal_pet(Pet* pet) {
     if(pet->hunger == 100) {
-        animate_pet(pet, data_baby_no_chr, 2, 20, 4, &set_idle_pet);
+        animate_pet(pet, FORMS[pet->formId].no, 2, 20, 4, &set_idle_pet);
         return;
     }
     pet->hunger += 25;
@@ -509,7 +505,7 @@ void eat_meal_pet(Pet* pet) {
 
 void eat_treat_pet(Pet* pet) {
     if(pet->hunger == 100) {
-        animate_pet(pet, data_baby_no_chr, 2, 20, 4, &set_idle_pet);
+        animate_pet(pet, FORMS[pet->formId].no, 2, 20, 4, &set_idle_pet);
         return;
     }
     pet->hunger += 5;

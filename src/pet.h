@@ -80,7 +80,7 @@ AnimatedSprite sfx2;
 Vector2 sfx2Position;
 
 
-void init_sfx_pet(AnimatedSprite* sfx, Vector2* position, int x, int y, int w, int h, int addr, int length, int speed, int repeat, void* onAnimationEnd) {
+void init_sfx_pet(AnimatedSprite* sfx, Vector2* position, int x, int y, int w, int h, unsigned char* addr, int length, int speed, int repeat, void* onAnimationEnd) {
     position->x = x;
     position->y = y;
     init_animation(sfx, addr, length, speed, repeat, onAnimationEnd);
@@ -482,7 +482,7 @@ void clean_sfx_pet() {
 }
 
 void eat_after_pet(Pet* pet) {
-    pet->position.x = screen_width() / 2 - 32 / 2;
+    pet->position.x = screen_width() / 2;
     pet->position.y = GROUND - 32;
     if(pet->happy > 100) pet->happy =  100;
     if(pet->hunger > 100) pet->hunger = 100;
@@ -499,8 +499,8 @@ void eat_meal_pet(Pet* pet) {
         return;
     }
     pet->hunger += 25;
-    init_sfx_pet(&sfx1, &sfx1Position, pet->position.x - 16, pet->position.y + 16, 16, 16, data_meal_chr, 3, 50, 0, &clean_sfx_pet);
     eat_after_pet(pet);
+    init_sfx_pet(&sfx1, &sfx1Position, pet->position.x - 16, pet->position.y + 16, 16, 16, data_meal_chr, 3, 50, 0, &clean_sfx_pet);
 }
 
 void eat_treat_pet(Pet* pet) {
@@ -511,8 +511,8 @@ void eat_treat_pet(Pet* pet) {
     pet->hunger += 5;
     pet->happy += 25;
     pet->weight += 2;
-    init_sfx_pet(&sfx1, &sfx1Position, pet->position.x - 16, pet->position.y + 16, 16, 16, data_treat_chr, 3, 50, 0, &clean_sfx_pet);
     eat_after_pet(pet);
+    init_sfx_pet(&sfx1, &sfx1Position, pet->position.x - 16, pet->position.y + 16, 16, 16, data_treat_chr, 3, 50, 0, &clean_sfx_pet);
 }
 
 void draw_pet(Pet* pet, bool lightOn) {

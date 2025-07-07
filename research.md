@@ -52,7 +52,7 @@ https://www.make.vg/brewtool/chr/index.html
 - [x] weight UI
 - [x] routine to write numbers
 - [x] save system
-- [ ] sfx position bug 
+- [x] sfx position bug 
 - [ ] sleeping animation bug after loading
 - [ ] reset after death
 - [ ] when loading only light is available 

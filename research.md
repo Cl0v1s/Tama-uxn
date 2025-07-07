@@ -53,6 +53,7 @@ https://www.make.vg/brewtool/chr/index.html
 - [x] routine to write numbers
 - [x] save system
 - [x] sfx position bug 
-- [ ] sleeping animation bug after loading
+- [x] sleeping animation bug after loading
 - [ ] reset after death
-- [ ] when loading only light is available 
+- [x] when loading only light is available 
+- [ ] add sleeping animation on pet

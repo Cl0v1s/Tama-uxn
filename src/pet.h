@@ -190,7 +190,6 @@ void manage_sleep_pet(Pet* pet) {
         sleepEndTime = FORMS[pet->formId].sleepEndHour * 60 + FORMS[pet->formId].sleepEndMinute;
     }
 
-    bool before = pet->sleeping;
     // Vérifier si l'heure actuelle est dans la plage de sommeil
     if (sleepStartTime <= sleepEndTime) {
         // Cas où la plage de sommeil ne traverse pas minuit
@@ -208,18 +207,16 @@ void manage_sleep_pet(Pet* pet) {
         }
     }
 
-    if(before != pet->sleeping) {
-        if(pet->sleeping) {
-            sfx1.addr = 0;
-            pet->position.x = screen_width() / 2 - 32 / 2;
-            pet->position.y = GROUND - 32;
-            init_sfx_pet(&sfx2, &sfx2Position, pet->position.x - 16, pet->position.y - 16, 16, 16, data_zzz_chr, 3, 50, 0, 0);
-        } else {
-            set_idle_pet();
-            sfx1.addr = 0;
-            sfx2.addr = 0;
-        }
-        if(onPetStatsChanged != 0) callback(onPetStatsChanged);
+    if(pet->sleeping) {
+        sfx1.addr = 0;
+        pet->position.x = screen_width() / 2 - 32;
+        pet->position.y = GROUND - 32;
+        init_sfx_pet(&sfx2, &sfx2Position, pet->position.x + 24, pet->position.y, 32, 32, data_zzz_chr, 3, 50, 0, 0);
+    } else {
+        set_idle_pet();
+        print("up\n");
+        sfx1.addr = 0;
+        sfx2.addr = 0;
     }
 }
 
@@ -433,8 +430,6 @@ void stats_pet(Pet *pet)
     init_date(&add, FALSE);
     add.minute = 1;
     add_date(&pet->next_update, &add);
-
-
 }
 
 /**
@@ -477,6 +472,7 @@ void clean_poop_pet(Pet* pet) {
 }
 
 void clean_sfx_pet() {
+    print("Clean sfx\n");
     sfx1.addr = 0;
     sfx2.addr = 0;
 }

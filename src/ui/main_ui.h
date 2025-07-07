@@ -66,7 +66,11 @@ void set_disabled_main_ui(int value, int newIndexIfDisabled) {
 }
 
 void toggle_day_main_ui() {
-    mainUI.is_day = !mainUI.is_day;
+    set_day_main_ui(!mainUI.is_day);
+}
+
+void set_day_main_ui(bool value) {
+    mainUI.is_day = value;
     if(mainUI.is_day) {
         set_palette(
             DAY_1, 

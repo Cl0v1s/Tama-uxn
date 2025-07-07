@@ -211,9 +211,9 @@ void manage_sleep_pet(Pet* pet) {
     if(before != pet->sleeping) {
         if(pet->sleeping) {
             sfx1.addr = 0;
-            init_animation(&sfx2, data_zzz_chr, 3,50, 0, 0);
             pet->position.x = screen_width() / 2 - 32 / 2;
             pet->position.y = GROUND - 32;
+            init_sfx_pet(&sfx2, &sfx2Position, pet->position.x - 16, pet->position.y - 16, 16, 16, data_zzz_chr, 3, 50, 0, 0);
         } else {
             set_idle_pet();
             sfx1.addr = 0;

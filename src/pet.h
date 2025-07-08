@@ -19,12 +19,11 @@
 
 // baby
 
-
-#define PET_STAGE_INIT 0 // 0s
-#define PET_STAGE_EGG_SLOW 1  // 2min30
-#define PET_STAGE_EGG_FAST 2  // 2min30
+#define PET_STAGE_INIT 0            // 0s
+#define PET_STAGE_EGG_SLOW 1        // 2min30
+#define PET_STAGE_EGG_FAST 2        // 2min30
 #define PET_STAGE_BABY_BEFORE_NAP 3 // 61min
-#define PET_STAGE_BABY_AFTER_NAP 4 // will stop there for now
+#define PET_STAGE_BABY_AFTER_NAP 4  // will stop there for now
 #define PET_STAGE_CHILD 5
 #define PET_STAGE_ADULT 6
 #define PET_STAGE_DEAD 100
@@ -72,15 +71,15 @@ typedef struct
 } Pet;
 
 Pet pet;
-void* onPetStatsChanged;
+void *onPetStatsChanged;
 
 AnimatedSprite sfx1;
 Vector2 sfx1Position;
 AnimatedSprite sfx2;
 Vector2 sfx2Position;
 
-
-void init_sfx_pet(AnimatedSprite* sfx, Vector2* position, int x, int y, int w, int h, unsigned char* addr, int length, int speed, int repeat, void* onAnimationEnd) {
+void init_sfx_pet(AnimatedSprite *sfx, Vector2 *position, int x, int y, int w, int h, unsigned char *addr, int length, int speed, int repeat, void *onAnimationEnd)
+{
     position->x = x;
     position->y = y;
     init_animation(sfx, addr, length, speed, repeat, onAnimationEnd);
@@ -109,7 +108,8 @@ void animate_pet(Pet *pet, unsigned char *addr, int length, int speed, int repea
 /**
  * CALLBACK
  */
-void set_idle_pet() {
+void set_idle_pet()
+{
     animate_pet(&pet, FORMS[pet.formId].idle1, 2, 50, 0, 0);
     pet.can_tp = TRUE;
 }
@@ -117,7 +117,7 @@ void set_idle_pet() {
 /**
  * Replace pet randomly on the screen
  */
-void tp_pet(Pet* pet)
+void tp_pet(Pet *pet)
 {
     int min = pet->poopCount > 0 ? POOP_MAX_POOPS * 16 : 0;
     pet->position.x = random(min, screen_width() - 32);
@@ -126,19 +126,41 @@ void tp_pet(Pet* pet)
     animate_pet(pet, FORMS[pet->formId].idle2, 3, 30, 0, &set_idle_pet);
 }
 
-bool load_pet(Pet* pet) {
+bool load_pet(Pet *pet)
+{
     // this load raw data into pet
     bool loaded = load(pet, sizeof(Pet));
-    if(loaded) {
+    if (loaded)
+    {
         /*
-            since current form may require an onAnimationEnd callback 
+            since current form may require an onAnimationEnd callback
             that can change from build to build, we need to ensure the form
             is correctly set
         */
-       tp_pet(pet);
-       if(onPetStatsChanged != 0) {
-        callback(onPetStatsChanged);
-       }
+        int x = pet->position.x;
+        int y = pet->position.y;
+        tp_pet(pet);
+        pet->position.x = x;
+        pet->position.y = y;
+
+        // fast forward until now
+        Date now, add;
+        init_date(&add, FALSE);
+        add.minute = 1;
+        init_date(&now, TRUE);
+        int mins = diff_min_date(&pet->next_update, &now);
+        copy_date(&pet->next_update, &now);
+
+        for (int i = 0; i < mins; i++)
+        {
+            add_date(&now, &add);
+            stats_pet(pet, &now);
+        }
+
+        if (onPetStatsChanged != 0)
+        {
+            callback(onPetStatsChanged);
+        }
     }
     return loaded;
 }
@@ -177,42 +199,57 @@ void init_pet(Pet *pet)
     animate_pet(pet, data_egg_chr, 2, 50, 0, 0);
 }
 
-void set_on_state_changed_pet(void* callback) {
+void set_on_state_changed_pet(void *callback)
+{
     onPetStatsChanged = callback;
 }
 
-void manage_sleep_pet(Pet* pet) {
+void manage_sleep_pet(Pet *pet)
+{
     int currentTime = datetime_hour() * 60 + datetime_minute();
     int sleepStartTime = pet->napStartHour * 60 + pet->napStartMinute;
     int sleepEndTime = pet->napEndHour * 60 + pet->napEndMinute;
-    if(pet->stage >= PET_STAGE_BABY_AFTER_NAP) {
+    if (pet->stage >= PET_STAGE_BABY_AFTER_NAP)
+    {
         sleepStartTime = FORMS[pet->formId].sleepStartHour * 60 + FORMS[pet->formId].sleepStartMinute;
         sleepEndTime = FORMS[pet->formId].sleepEndHour * 60 + FORMS[pet->formId].sleepEndMinute;
     }
 
     // Vérifier si l'heure actuelle est dans la plage de sommeil
-    if (sleepStartTime <= sleepEndTime) {
+    if (sleepStartTime <= sleepEndTime)
+    {
         // Cas où la plage de sommeil ne traverse pas minuit
-        if (currentTime >= sleepStartTime && currentTime <= sleepEndTime) {
+        if (currentTime >= sleepStartTime && currentTime <= sleepEndTime)
+        {
             pet->sleeping = TRUE;
-        } else {
+        }
+        else
+        {
             pet->sleeping = FALSE;
         }
-    } else {
+    }
+    else
+    {
         // Cas où la plage de sommeil traverse minuit
-        if (currentTime >= sleepStartTime || currentTime <= sleepEndTime) {
+        if (currentTime >= sleepStartTime || currentTime <= sleepEndTime)
+        {
             pet->sleeping = TRUE;
-        } else {
+        }
+        else
+        {
             pet->sleeping = FALSE;
         }
     }
 
-    if(pet->sleeping) {
+    if (pet->sleeping)
+    {
         sfx1.addr = 0;
         pet->position.x = screen_width() / 2 - 32;
         pet->position.y = GROUND - 32;
         init_sfx_pet(&sfx2, &sfx2Position, pet->position.x + 24, pet->position.y, 32, 32, data_zzz_chr, 3, 50, 0, 0);
-    } else {
+    }
+    else
+    {
         set_idle_pet();
         print("up\n");
         sfx1.addr = 0;
@@ -220,16 +257,17 @@ void manage_sleep_pet(Pet* pet) {
     }
 }
 
-void dead_pet(Pet* pet) {
+void dead_pet(Pet *pet)
+{
     pet->stage = PET_STAGE_DEAD;
     init_animation(&pet->sprite, data_angel_chr, 2, 50, 0, 0);
     init_sfx_pet(&sfx1, &sfx1Position, pet->position.x - 32, pet->position.y, 32, 32, data_stars_chr, 2, 50, 0, 0);
     init_sfx_pet(&sfx2, &sfx2Position, pet->position.x + 32, pet->position.y, 32, 32, data_stars_chr, 2, 50, 0, 0);
-    if(onPetStatsChanged != 0) {
+    if (onPetStatsChanged != 0)
+    {
         callback(onPetStatsChanged);
     }
-} 
- 
+}
 
 /**
  * Is called when pet is growing up
@@ -239,10 +277,11 @@ void grow_pet(Pet *pet)
     print("GROW ");
     printInt(pet->stage);
     putchar('>');
-    printInt(pet->stage+1);
+    printInt(pet->stage + 1);
     putchar('\n');
 
-    if(pet->stage == PET_STAGE_DEAD) return;
+    if (pet->stage == PET_STAGE_DEAD)
+        return;
 
     pet->stage += 1;
     if (pet->stage == PET_STAGE_EGG_SLOW) // 0 => 1
@@ -262,7 +301,7 @@ void grow_pet(Pet *pet)
         Date add;
         init_date(&add, FALSE);
         add.minute = 0; // 2;
-        add.second = 1; // 30; 
+        add.second = 1; // 30;
         add_date(&pet->step, &add);
     }
     else if (pet->stage == PET_STAGE_BABY_BEFORE_NAP) // 2 => 3
@@ -305,7 +344,8 @@ void grow_pet(Pet *pet)
         // set next grow up after 1 min post wakeup
         copy_date(&now, &pet->step);
     }
-    else if(pet->stage == PET_STAGE_BABY_AFTER_NAP) { // 3 => 4
+    else if (pet->stage == PET_STAGE_BABY_AFTER_NAP)
+    { // 3 => 4
         init_date(&pet->step, TRUE);
         Date add;
         init_date(&add, FALSE);
@@ -319,12 +359,14 @@ void grow_pet(Pet *pet)
         pet->napEndMinute = 0;
     }
 
-    if(onPetStatsChanged != 0) {
+    if (onPetStatsChanged != 0)
+    {
         callback(onPetStatsChanged);
     }
 }
 
-void set_alert_pet(Pet* pet, unsigned char reason) {
+void set_alert_pet(Pet *pet, unsigned char reason)
+{
     // TODO: add a bip or something
     init_date(&pet->lastAlertDate, TRUE);
     Date add;
@@ -334,11 +376,16 @@ void set_alert_pet(Pet* pet, unsigned char reason) {
     pet->lastAlertReason = reason;
 }
 
-void manage_poop_pet(Pet* pet) {
-    if(pet->poop <= 0) {
-        if(pet->poopCount >= POOP_MAX_POOPS) {
+void manage_poop_pet(Pet *pet)
+{
+    if (pet->poop <= 0)
+    {
+        if (pet->poopCount >= POOP_MAX_POOPS)
+        {
             set_alert_pet(pet, PET_ALERT_POOP);
-        } else {
+        }
+        else
+        {
             pet->poopCount += 1;
             tp_pet(pet);
             init_poop();
@@ -347,37 +394,49 @@ void manage_poop_pet(Pet* pet) {
     }
 }
 
-
-void reset_alert_pet(Pet* pet) {
+void reset_alert_pet(Pet *pet)
+{
     init_date(&pet->lastAlertDate, FALSE);
     pet->lastAlertReason = 0;
 }
 
-void manage_alert_pet(Pet* pet) {
-    if(pet->happy <= 0) {
+void manage_alert_pet(Pet *pet)
+{
+    if (pet->happy <= 0)
+    {
         set_alert_pet(pet, PET_ALERT_HAPPY);
         pet->happy = 0;
-    } else if(pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_HAPPY) {
+    }
+    else if (pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_HAPPY)
+    {
         reset_alert_pet(pet);
     }
 
-    if(pet->hunger <= 0) {
+    if (pet->hunger <= 0)
+    {
         set_alert_pet(pet, PET_ALERT_HUNGRY);
         pet->hunger = 0;
-    } else if(pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_HUNGRY) {
+    }
+    else if (pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_HUNGRY)
+    {
         reset_alert_pet(pet);
     }
 
-    if(pet->weight < FORMS[pet->formId].weightMin || pet->weight > FORMS[pet->formId].weightMax) {
+    if (pet->weight < FORMS[pet->formId].weightMin || pet->weight > FORMS[pet->formId].weightMax)
+    {
         set_alert_pet(pet, PET_ALERT_WEIGHT);
-    } else if (pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_WEIGHT) {
+    }
+    else if (pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_WEIGHT)
+    {
         reset_alert_pet(pet);
     }
-    if(pet->weight <= 0) {
+    if (pet->weight <= 0)
+    {
         dead_pet(pet);
     }
 
-    if(pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_POOP && pet->poopCount < POOP_MAX_POOPS) {
+    if (pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_POOP && pet->poopCount < POOP_MAX_POOPS)
+    {
         reset_alert_pet(pet);
     }
 }
@@ -385,31 +444,42 @@ void manage_alert_pet(Pet* pet) {
 /**
  * Is called when pet stats need to be updated
  */
-void stats_pet(Pet *pet)
+void stats_pet(Pet *pet, Date *now)
 {
-    print("Stats\n");
+    print("Stats ");
+    printInt(now->day);
+    print("/");
+    printInt(now->month);
+    print("/");
+    printInt(now->year);
+    print(" ");
+    printInt(now->hour);
+    print(":");
+    printInt(now->minute);
+    print("\n");
     manage_sleep_pet(pet);
 
     pet->hunger += FORMS[pet->formId].hungerDecay; // TODO: handle float
-    pet->happy += FORMS[pet->formId].happyDecay; // TODO: handle float
-    pet->poop += FORMS[pet->formId].poopDecay; // TODO: handle float
+    pet->happy += FORMS[pet->formId].happyDecay;   // TODO: handle float
+    pet->poop += FORMS[pet->formId].poopDecay;     // TODO: handle float
 
     manage_poop_pet(pet);
 
-    if(pet->poopCount > 0) {
+    if (pet->poopCount > 0)
+    {
         pet->happy -= (2 * pet->happy / 100) * pet->poopCount;
     }
 
     manage_alert_pet(pet);
 
-    Date now;
-    init_date(&now, TRUE);
     // manage alerts
-    if (pet->lastAlertDate.year != 0 && compare_date(&pet->lastAlertDate, &now) <= 0)
+    if (pet->lastAlertDate.year != 0 && compare_date(&pet->lastAlertDate, now) <= 0)
     {
         // reset related stats
-        if(pet->lastAlertReason == PET_ALERT_HAPPY) pet->happy = 100;
-        else if(pet->lastAlertReason == PET_ALERT_HUNGRY) pet->hunger = 100;
+        if (pet->lastAlertReason == PET_ALERT_HAPPY)
+            pet->happy = 100;
+        else if (pet->lastAlertReason == PET_ALERT_HUNGRY)
+            pet->hunger = 100;
         // no change for poop until next time pet is pooping, as this will trigger a new alert
 
         pet->caremissReaons[pet->caremissCount] = pet->lastAlertReason;
@@ -417,19 +487,31 @@ void stats_pet(Pet *pet)
         reset_alert_pet(pet);
     }
 
-    if(onPetStatsChanged != 0) {
+    if (onPetStatsChanged != 0)
+    {
         callback(onPetStatsChanged);
     }
 
-    if(pet->happy <= 0) {
+    if (pet->happy <= 0)
+    {
         dead_pet(pet);
     }
 
-    copy_date(&now, &pet->next_update);
+    copy_date(now, &pet->next_update);
     Date add;
     init_date(&add, FALSE);
     add.minute = 1;
     add_date(&pet->next_update, &add);
+
+    print("Sleeping: ");
+    printInt(pet->sleeping);
+    print(" Hu: ");
+    printInt(pet->hunger);
+    print(" Ha: ");
+    printInt(pet->happy);
+    print(" Ca: ");
+    printInt(pet->caremissCount);
+    print("\n");
 }
 
 /**
@@ -442,7 +524,7 @@ void update_pet(Pet *pet)
 
     // handle growing up
     if (compare_date(&pet->step, &now) <= 0)
-    { 
+    {
         // next step if in the past
         grow_pet(pet);
     }
@@ -451,8 +533,9 @@ void update_pet(Pet *pet)
     {
         // handle stats
         if (compare_date(&pet->next_update, &now) <= 0)
-        { // next step if in the past
-            stats_pet(pet);
+        {
+            // next step is in the past
+            stats_pet(pet, &now);
         }
         // 10% chance to tp pet somewhere on the screen if he can tp
         if (random(0, 100) < 10 && pet->can_tp && pet->sleeping == FALSE)
@@ -462,35 +545,43 @@ void update_pet(Pet *pet)
     }
 }
 
-void clean_poop_pet(Pet* pet) {
+void clean_poop_pet(Pet *pet)
+{
     pet->poopCount = 0;
     clean_poop();
     manage_alert_pet(pet);
-    if(onPetStatsChanged != 0) {
+    if (onPetStatsChanged != 0)
+    {
         callback(onPetStatsChanged);
     }
 }
 
-void clean_sfx_pet() {
-    print("Clean sfx\n");
+void clean_sfx_pet()
+{
     sfx1.addr = 0;
     sfx2.addr = 0;
 }
 
-void eat_after_pet(Pet* pet) {
+void eat_after_pet(Pet *pet)
+{
     pet->position.x = screen_width() / 2;
     pet->position.y = GROUND - 32;
-    if(pet->happy > 100) pet->happy =  100;
-    if(pet->hunger > 100) pet->hunger = 100;
+    if (pet->happy > 100)
+        pet->happy = 100;
+    if (pet->hunger > 100)
+        pet->hunger = 100;
     animate_pet(pet, FORMS[pet->formId].eat, 2, 20, 4, &set_idle_pet);
     manage_alert_pet(pet);
-    if(onPetStatsChanged != 0) {
+    if (onPetStatsChanged != 0)
+    {
         callback(onPetStatsChanged);
     }
 }
 
-void eat_meal_pet(Pet* pet) {
-    if(pet->hunger == 100) {
+void eat_meal_pet(Pet *pet)
+{
+    if (pet->hunger == 100)
+    {
         animate_pet(pet, FORMS[pet->formId].no, 2, 20, 4, &set_idle_pet);
         return;
     }
@@ -499,8 +590,10 @@ void eat_meal_pet(Pet* pet) {
     init_sfx_pet(&sfx1, &sfx1Position, pet->position.x - 16, pet->position.y + 16, 16, 16, data_meal_chr, 3, 50, 0, &clean_sfx_pet);
 }
 
-void eat_treat_pet(Pet* pet) {
-    if(pet->hunger == 100) {
+void eat_treat_pet(Pet *pet)
+{
+    if (pet->hunger == 100)
+    {
         animate_pet(pet, FORMS[pet->formId].no, 2, 20, 4, &set_idle_pet);
         return;
     }
@@ -511,14 +604,18 @@ void eat_treat_pet(Pet* pet) {
     init_sfx_pet(&sfx1, &sfx1Position, pet->position.x - 16, pet->position.y + 16, 16, 16, data_treat_chr, 3, 50, 0, &clean_sfx_pet);
 }
 
-void draw_pet(Pet* pet, bool lightOn) {
-    if(pet->sprite.addr != 0 && (pet->sleeping != TRUE || lightOn)) {
+void draw_pet(Pet *pet, bool lightOn)
+{
+    if (pet->sprite.addr != 0 && (pet->sleeping != TRUE || lightOn))
+    {
         draw_animation(&pet->sprite, pet->position.x, pet->position.y, 0x0);
     }
-    if(sfx1.addr != 0) {
+    if (sfx1.addr != 0)
+    {
         draw_animation(&sfx1, sfx1Position.x, sfx1Position.y, 0x0);
     }
-    if(sfx2.addr != 0) {
+    if (sfx2.addr != 0)
+    {
         draw_animation(&sfx2, sfx2Position.x, sfx2Position.y, 0x0);
     }
 }

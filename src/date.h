@@ -43,6 +43,34 @@ void init_date(Date* date, bool now) {
     }
 }
 
+int total_minutes_date(Date* d) {
+    int days = 0;
+    int y, m;
+    // Years
+    for (y = 0; y < d->year - 2025; y++) {
+        days += is_leap_year(y) ? 366 : 365;
+    }
+    // Months
+    for (m = 1; m < d->month; m++) {
+        days += days_in_month(m, d->year);
+    }
+    // Days
+    days += d->day - 1;
+    // Total minutes
+    return days * 24 * 60 + d->hour * 60 + d->minute;
+}
+
+int diff_min_date(Date* first, Date* last) {
+    // Convert both dates to total minutes since year 0
+    int total_minutes_first = 0;
+    int total_minutes_last = 0;
+
+    total_minutes_first = total_minutes_date(first);
+    total_minutes_last = total_minutes_date(last);
+
+    return total_minutes_last - total_minutes_first;
+}
+
 int compare_date(Date* a, Date* b) {
     // Compare years
     if (a->year < b->year) return -1;

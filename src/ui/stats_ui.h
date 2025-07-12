@@ -9,7 +9,7 @@
 #define STATS_UI_HAPPY 0
 #define STATS_UI_HUNGRY 1
 #define STATS_UI_CARE 2
-#define STATS_UI_WEIGHT 3
+#define STATS_UI_NUMBERS 3
 
 #define STATS_UI_STEPS 4
 
@@ -57,10 +57,14 @@ void draw_stats_ui() {
         for(int i = 0; i < pet.caremissCount; i++) {
             paint(x + (16 + 2) * i, y + 18, 16, 16, 0x0, data_skull_chr);
         }
-    } else if(statsUI.step == STATS_UI_WEIGHT) {
-        paint(x, y + 8, 16, 16, 0x0, data_ui_weight_chr);
-        paintInt(pet.weight, x + 32, y + 8, 0x0);
-        // TODO: actually write numbers
+    } else if(statsUI.step == STATS_UI_NUMBERS) {
+        paint(x, y, 16, 16, 0x0, data_ui_weight_chr);
+        paintInt(pet.weight, x + 32, y, 0x0);
+        Date now;
+        init_date(&now, TRUE);
+        int days = diff_min_date(&pet.init, &now) / 60 / 24;
+        paint(x, y + 22, 16, 16, 0x0, data_ui_day_chr);
+        paintInt(days, x + 32, y + 22, 0x0);
     }
 }
 

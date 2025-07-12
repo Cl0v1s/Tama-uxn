@@ -4,6 +4,7 @@
 
 #include "data/ui/hungry.chr.h"
 #include "data/ui/stats.chr.h"
+#include "data/ui/day.chr.h"
 #include "data/ui/light.chr.h"
 #include "data/ui/text.chr.h"
 #include "data/ui/levels.chr.h"

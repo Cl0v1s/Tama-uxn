@@ -9,6 +9,7 @@
         "stats.chr.h": "c",
         "weight.chr.h": "c",
         "meal.chr.h": "c",
-        "angel.chr.h": "c"
+        "angel.chr.h": "c",
+        "light.chr.h": "c"
     }
 }

@@ -15,6 +15,9 @@
 
 typedef struct {
     unsigned char step;
+    void* retDraw;
+    void* retUpdate;
+    bool retDrawPet;
 } StatsUI;
 
 StatsUI statsUI;
@@ -25,11 +28,17 @@ void draw_level_ui(int stat, int x, int y) {
     paint(x, y + 18, 64, 16, 0x0, data_ui_levels_chr + 32 * lvl * 8) ;
 }
 
+void return_stats_ui() {
+    ui.drawPet = statsUI.retDrawPet;
+    ui.updateUI = statsUI.retUpdate;
+    ui.drawUI = statsUI.retDraw;
+}
+
 void update_stats_ui() {
     if(controller_button() == ButtonA) {
         statsUI.step = (statsUI.step + 1);
         if(statsUI.step >= STATS_UI_STEPS) {
-            goto_main_ui();
+            return_stats_ui();
         }
     }
 }
@@ -56,6 +65,9 @@ void draw_stats_ui() {
 }
 
 void init_stats_ui() {
+    statsUI.retDraw = ui.drawUI;
+    statsUI.retUpdate = ui.updateUI;
+    statsUI.retDrawPet = ui.drawPet;
     statsUI.step = STATS_UI_HAPPY;
 
     ui.updateUI = (int)&update_stats_ui;

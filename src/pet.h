@@ -126,44 +126,6 @@ void tp_pet(Pet *pet)
     animate_pet(pet, FORMS[pet->formId].idle2, 3, 30, 0, &set_idle_pet);
 }
 
-bool load_pet(Pet *pet)
-{
-    // this load raw data into pet
-    bool loaded = load(pet, sizeof(Pet));
-    if (loaded)
-    {
-        /*
-            since current form may require an onAnimationEnd callback
-            that can change from build to build, we need to ensure the form
-            is correctly set
-        */
-        int x = pet->position.x;
-        int y = pet->position.y;
-        tp_pet(pet);
-        pet->position.x = x;
-        pet->position.y = y;
-
-        // fast forward until now
-        Date now, add;
-        init_date(&add, FALSE);
-        add.minute = 1;
-        init_date(&now, TRUE);
-        int mins = diff_min_date(&pet->next_update, &now);
-        copy_date(&pet->next_update, &now);
-
-        for (int i = 0; i < mins; i++)
-        {
-            add_date(&now, &add);
-            stats_pet(pet, &now);
-        }
-
-        if (onPetStatsChanged != 0)
-        {
-            callback(onPetStatsChanged);
-        }
-    }
-    return loaded;
-}
 
 void init_pet(Pet *pet)
 {
@@ -197,6 +159,10 @@ void init_pet(Pet *pet)
     add_date(&pet->step, &add);
 
     animate_pet(pet, data_egg_chr, 2, 50, 0, 0);
+
+    clean_poop_pet(pet);
+    clean_sfx_pet();
+    reset_alert_pet(pet);
 }
 
 void set_on_state_changed_pet(void *callback)
@@ -280,7 +246,7 @@ void grow_pet(Pet *pet)
     printInt(pet->stage + 1);
     putchar('\n');
 
-    if (pet->stage == PET_STAGE_DEAD)
+    if (pet->stage >= PET_STAGE_DEAD)
         return;
 
     pet->stage += 1;
@@ -430,10 +396,6 @@ void manage_alert_pet(Pet *pet)
     {
         reset_alert_pet(pet);
     }
-    if (pet->weight <= 0)
-    {
-        dead_pet(pet);
-    }
 
     if (pet->lastAlertDate.year != 0 && pet->lastAlertReason == PET_ALERT_POOP && pet->poopCount < POOP_MAX_POOPS)
     {
@@ -512,6 +474,46 @@ void stats_pet(Pet *pet, Date *now)
     print(" Ca: ");
     printInt(pet->caremissCount);
     print("\n");
+}
+
+
+bool load_pet(Pet *pet)
+{
+    // this load raw data into pet
+    bool loaded = load(pet, sizeof(Pet));
+    if (loaded)
+    {
+        /*
+            since current form may require an onAnimationEnd callback
+            that can change from build to build, we need to ensure the form
+            is correctly set
+        */
+        int x = pet->position.x;
+        int y = pet->position.y;
+        tp_pet(pet);
+        pet->position.x = x;
+        pet->position.y = y;
+
+        // fast forward until now
+        Date now, add;
+        init_date(&add, FALSE);
+        add.minute = 1;
+        init_date(&now, TRUE);
+        int mins = diff_min_date(&pet->next_update, &now);
+        copy_date(&pet->next_update, &now);
+
+        for (int i = 0; i < mins; i++)
+        {
+            add_date(&now, &add);
+            stats_pet(pet, &now);
+        }
+
+        if (onPetStatsChanged != 0)
+        {
+            callback(onPetStatsChanged);
+        }
+    }
+    return loaded;
 }
 
 /**

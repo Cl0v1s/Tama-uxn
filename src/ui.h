@@ -8,6 +8,7 @@
 #include "data/ui/text.chr.h"
 #include "data/ui/levels.chr.h"
 #include "data/ui/clean.chr.h"
+#include "data/skull.chr.h"
 #include "data/ui/alert.chr.h"
 
 

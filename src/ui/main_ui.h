@@ -65,10 +65,6 @@ void set_disabled_main_ui(int value, int newIndexIfDisabled) {
     }
 }
 
-void toggle_day_main_ui() {
-    set_day_main_ui(!mainUI.is_day);
-}
-
 void set_day_main_ui(bool value) {
     mainUI.is_day = value;
     if(mainUI.is_day) {
@@ -86,7 +82,9 @@ void set_day_main_ui(bool value) {
     }
 }
 
-
+void toggle_day_main_ui() {
+    set_day_main_ui(!mainUI.is_day);
+}
 
 void draw_button_main_ui(int x, int y, int index, int color, unsigned char* addr) {
     if(is_button_disabled_main_ui(index)) return;

@@ -146,5 +146,17 @@ void add_date(Date* now, Date* add) {
     now->year += add->year;
 }
 
+void print_date(Date* date) {
+    printInt(date->day);
+    print("/");
+    printInt(date->month + 1);
+    print("/");
+    printInt(date->year);
+    print(" ");
+    printInt(date->hour);
+    print(":");
+    printInt(date->minute);
+    print("\n");
+}
 
 #endif 

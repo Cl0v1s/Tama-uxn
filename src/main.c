@@ -1,6 +1,5 @@
 #include "lib/varvara.h"
 
-#include "data/skull.chr.h"
 #include "data/meal.chr.h"
 #include "data/treat.chr.h"
 #include "data/ui/cursor.chr.h"
@@ -15,6 +14,7 @@
 
 #include "ui.h"
 #include "ui/clean_ui.h"
+#include "ui/dead_ui.h"
 #include "ui/main_ui.h"
 #include "ui/stats_ui.h"
 #include "ui/food_ui.h"
@@ -60,9 +60,17 @@ void on_light() {
     toggle_day_main_ui();
 }
 
+void on_reset() {
+    init_game(FALSE);
+}
+
 bool previousSleeping = FALSE;
 void on_stats_changed() {
-    if(pet.stage >= PET_STAGE_BABY_BEFORE_NAP || pet.stage == PET_STAGE_DEAD) {
+    if(pet.stage == PET_STAGE_DEAD) {
+        init_dead_ui(&on_stats, &on_reset);
+    }
+
+    if(pet.stage >= PET_STAGE_BABY_BEFORE_NAP) {
         set_disabled_main_ui(0x00, 0);
     }
 
@@ -77,7 +85,7 @@ void on_stats_changed() {
     save(&pet, sizeof(Pet));
 }
 
-void main() {
+void init_game(bool load) {
     set_palette(
         DAY_1, 
         DAY_2, 
@@ -90,7 +98,11 @@ void main() {
     init_main_ui(&on_stats, &on_eat, &on_clean, &on_light);
     init_pet(&pet);
     set_on_state_changed_pet(&on_stats_changed);
-    if(load_pet(&pet)) {
+    if(load && load_pet(&pet)) {
         print("Loaded\n");
     }
+}
+
+void main() {
+    init_game(TRUE);
 }
